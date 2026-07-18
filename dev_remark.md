@@ -93,8 +93,9 @@ Do not expect Auth SMTP alone to power arbitrary Edge Function emails unless the
 
 - App tabs: `#form`, `#analytics`, `#request-hub`, `#admin` (mapped inside `App.jsx`).
 - Auth redirect URL must be **origin + base path without `#`**. Tokens arrive in hash; `completeAuthCallback` sets session then sanitizes to `#invite-accept` / `#reset-password` / `#login`.
+- **Signup confirm** (`type=signup`) must open app/login — never InviteAccept. Any auth error (e.g. Invalid API key) stays on login with a clear message.
 - Double-hash quirks (`#login#access_token=...`) are handled in `authRedirect.js`.
-- Level 3 Analytics flags default **off** until Phase 3 SQL is applied (`VITE_ENABLE_BEHAVIOUR_ANALYTICS=true`, etc.).
+- `VITE_SUPABASE_ANON_KEY` must be the **anon** key for the same project as `VITE_SUPABASE_URL`; rebuild after changing secrets.
 
 ---
 

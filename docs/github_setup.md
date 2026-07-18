@@ -41,6 +41,11 @@ VITE_SUPABASE_ANON_KEY
 
 Get both values from **Supabase Dashboard -> Project Settings -> API**.
 
+Use the **anon public** key only (JWT starts with `eyJ`, `"role":"anon"`).  
+If you paste the **service_role** key into `VITE_SUPABASE_ANON_KEY`, auth emails open the app with **Invalid API key** / broken login.
+
+After updating secrets, re-run the GitHub Actions deploy so the new build picks them up (Vite inlines env at build time).
+
 The anon key is expected to be bundled into the browser app. Production safety depends on Supabase Row Level Security policies.
 
 Never add `SUPABASE_SERVICE_ROLE_KEY` to frontend code or GitHub Pages build secrets.

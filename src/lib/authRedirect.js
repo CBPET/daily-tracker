@@ -64,7 +64,19 @@ export function isRecoveryFromUrl() {
 export function isInviteFromUrl() {
     const hash = window.location.hash;
     const { type } = parseAuthCallback();
+    // Signup / email confirmation must never be treated as invite
+    if (type === 'signup' || type === 'email' || type === 'magiclink') return false;
     return type === 'invite' || (hash.includes('access_token') && hash.includes('type=invite'));
+}
+
+export function isSignupConfirmFromUrl() {
+    const { type } = parseAuthCallback();
+    const hash = window.location.hash;
+    return (
+        type === 'signup' ||
+        type === 'email' ||
+        (hash.includes('access_token') && (hash.includes('type=signup') || hash.includes('type=email')))
+    );
 }
 
 export function isRecoveryCallback() {
@@ -125,14 +137,26 @@ async function doCompleteAuthCallback(supabase) {
     if (error) return { error: error.message, kind: null };
 
     if (session) {
-        const invite = isInviteFromUrl() || callback.type === 'invite';
-        const recovery = isRecoveryFromUrl() || callback.type === 'recovery';
+        const callbackType = callback.type;
+        const invite =
+            callbackType === 'invite' ||
+            (callbackType !== 'signup' &&
+                callbackType !== 'email' &&
+                callbackType !== 'magiclink' &&
+                callbackType !== 'recovery' &&
+                isInviteFromUrl());
+        const recovery = callbackType === 'recovery' || isRecoveryFromUrl();
         if (invite) {
             sanitizeAuthUrl('invite-accept');
             return { kind: 'invite' };
         }
-        sanitizeAuthUrl(recovery ? 'reset-password' : 'login');
-        return { kind: recovery ? 'recovery' : 'session' };
+        if (recovery) {
+            sanitizeAuthUrl('reset-password');
+            return { kind: 'recovery' };
+        }
+        // signup / email confirm / generic session
+        sanitizeAuthUrl('login');
+        return { kind: callbackType === 'signup' || callbackType === 'email' ? 'signup' : 'session' };
     }
 
     return { kind: null };

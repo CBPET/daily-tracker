@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, formatAuthClientError } from '../lib/supabase';
 import { sanitizeAuthUrl } from '../lib/authRedirect';
 import { deriveDisplayNameFromEmail } from '../lib/displayName';
 import { User, Lock, Loader2, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
+
+function friendlyInviteError(raw) {
+    return formatAuthClientError(raw);
+}
 
 /**
  * First-open screen after admin invite (or recovery when invite metadata present).
@@ -23,12 +27,20 @@ const InviteAccept = ({ setView, authCallbackError }) => {
         let cancelled = false;
 
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             if (cancelled) return;
 
-            if (session?.user) {
+            if (sessionError) {
+                setError(friendlyInviteError(sessionError.message));
+            } else if (session?.user) {
                 const user = session.user;
                 const meta = user.user_metadata || {};
+                // Signup-confirm users should not stay on invite UI
+                if (meta.onboarding === 'signup') {
+                    sanitizeAuthUrl('form');
+                    setView('app');
+                    return;
+                }
                 const name =
                     meta.performer_name ||
                     meta.full_name ||
@@ -38,7 +50,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
                 setEmail(user.email || '');
                 setSessionReady(true);
             } else if (authCallbackError) {
-                setError(authCallbackError);
+                setError(friendlyInviteError(authCallbackError));
             } else {
                 setError('Could not verify invite link. Ask your admin to resend the invite.');
             }
@@ -47,7 +59,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
 
         checkSession();
         return () => { cancelled = true; };
-    }, [authCallbackError]);
+    }, [authCallbackError, setView]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -99,7 +111,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
             setSuccess(true);
             setTimeout(() => setView('app'), 2000);
         } catch (err) {
-            setError(err.message);
+            setError(formatAuthClientError(err.message));
         } finally {
             setLoading(false);
         }

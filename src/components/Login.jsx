@@ -1,12 +1,16 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import { supabase, formatAuthClientError } from '../lib/supabase';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 
-const Login = ({ setView }) => {
+const Login = ({ setView, authCallbackError }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(authCallbackError || null);
+
+    useEffect(() => {
+        if (authCallbackError) setError(authCallbackError);
+    }, [authCallbackError]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -22,7 +26,7 @@ const Login = ({ setView }) => {
             if (authError) throw authError;
             // setView('app'); // Auth listener in App.jsx will handle this
         } catch (err) {
-            setError(err.message);
+            setError(formatAuthClientError(err.message));
         } finally {
             setLoading(false);
         }

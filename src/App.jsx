@@ -20,12 +20,13 @@ import { NotificationProvider } from './components/notifications/NotificationPro
 import NotificationBell from './components/notifications/NotificationBell';
 import NotificationDrawer from './components/notifications/NotificationDrawer';
 import NotificationCenter from './components/notifications/NotificationCenter';
-import { supabase } from './lib/supabase';
+import { supabase, formatAuthClientError } from './lib/supabase';
 import {
     completeAuthCallback,
     isRecoveryCallback,
     isInviteCallback,
     isAuthCallbackUrl,
+    isSignupConfirmFromUrl,
     sanitizeAuthUrl,
     getAuthRedirectUrl,
 } from './lib/authRedirect';
@@ -114,6 +115,7 @@ const App = () => {
     const getTodayISO = () => new Date().toISOString().slice(0, 10);
     const [performerName, setPerformerName] = useState('');
     const [titleName, setTitleName] = useState('');
+    const [batchFlow, setBatchFlow] = useState(false);
     const [batchNumber, setBatchNumber] = useState('');
     const [completedPages, setCompletedPages] = useState('');
     const [taskType, setTaskType] = useState('');
@@ -163,21 +165,27 @@ const App = () => {
             if (!mounted) return;
 
             setSession(session);
-            setAuthCallbackError(callbackResult.error || null);
+            setAuthCallbackError(
+                callbackResult.error ? formatAuthClientError(callbackResult.error) : null
+            );
 
             if (session) {
-                if (callbackResult.kind === 'invite' || isInviteCallback()) {
+                if (callbackResult.kind === 'invite') {
                     setView('invite-accept');
                 } else if (callbackResult.kind === 'recovery' || isRecoveryCallback()) {
                     setView('reset-password');
                 } else {
+                    // signup confirm, magic link, or normal session → app
                     setView('app');
                 }
                 fetchProfile(session.user.id);
-            } else if (callbackResult.error || isInviteCallback()) {
+            } else if (callbackResult.kind === 'invite' || isInviteCallback()) {
                 setView('invite-accept');
-            } else if (callbackResult.error || isRecoveryCallback()) {
+            } else if (callbackResult.kind === 'recovery' || isRecoveryCallback()) {
                 setView('reset-password');
+            } else if (callbackResult.error) {
+                // e.g. Invalid API key on signup confirm — stay on login, not InviteAccept
+                setView('login');
             }
 
             setAuthLoading(false);
@@ -192,7 +200,9 @@ const App = () => {
 
             if (session) {
                 fetchProfile(session.user.id);
-                if (isInviteCallback() || window.location.hash.includes('invite-accept')) {
+                if (isSignupConfirmFromUrl()) {
+                    setView('app');
+                } else if (isInviteCallback()) {
                     setView('invite-accept');
                 } else if (event === 'PASSWORD_RECOVERY' || isRecoveryCallback()) {
                     setView('reset-password');
@@ -708,6 +718,11 @@ const App = () => {
             setShowErrorModal(true);
             return;
         }
+        if (batchFlow && !batchNumber) {
+            setToastMessage('❌ Batch Number is required when Batch flow is enabled');
+            setShowToast(true);
+            return;
+        }
         if (isEntryDuplicateGuardEnabled()) {
             const dup = statusEntries.find(
                 (e) =>
@@ -744,11 +759,11 @@ const App = () => {
             status: achievementStatus,
             client_id: selectedClient || 'DEFAULT_CLIENT',
             sub_division: selectedSubDivision || null,
-            batch_number: batchNumber ? Number(batchNumber) : null,
+            batch_number: batchFlow && batchNumber ? Number(batchNumber) : null,
         };
         setStatusEntries(prev => [newEntry, ...prev]);
         await syncToSupabase(newEntry);
-        setTitleName(''); setBatchNumber(''); setCompletedPages(''); setTaskType(''); setEstimatedTime(''); setTakenTime('');
+        setTitleName(''); setBatchFlow(false); setBatchNumber(''); setCompletedPages(''); setTaskType(''); setEstimatedTime(''); setTakenTime('');
         setToastMessage('✅ Status saved and synced!'); setShowToast(true);
         if (notificationsEnabled && canSelectPerformerOnForm && performerName !== profile?.performer_name) {
             const selectedProf = accessibleProfiles.find((p) => p.performer_name === performerName);
@@ -867,7 +882,7 @@ const App = () => {
         if (view === 'landing') return <LandingPage onGetStarted={() => setView('login')} />;
         if (view === 'signup') return <Signup setView={setView} />;
         if (view === 'forgot-password') return <ForgotPassword setView={setView} />;
-        return <Login setView={setView} />;
+        return <Login setView={setView} authCallbackError={authCallbackError} />;
     }
 
     if (view === 'signup') {
@@ -1441,17 +1456,37 @@ const App = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Batch Number (optional)</label>
-                                        <select
-                                            value={batchNumber}
-                                            onChange={(e) => setBatchNumber(e.target.value)}
-                                            className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none font-medium"
-                                        >
-                                            <option value="">None</option>
-                                            {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-                                                <option key={n} value={n}>Batch {n}</option>
-                                            ))}
-                                        </select>
+                                        <label className="inline-flex items-center gap-2 cursor-pointer select-none mb-2 ml-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={batchFlow}
+                                                onChange={(e) => {
+                                                    const on = e.target.checked;
+                                                    setBatchFlow(on);
+                                                    if (!on) setBatchNumber('');
+                                                }}
+                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Batch flow</span>
+                                        </label>
+                                        {batchFlow && (
+                                            <>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">
+                                                    Batch Number <span className="text-red-500 normal-case tracking-normal">(required)</span>
+                                                </label>
+                                                <select
+                                                    value={batchNumber}
+                                                    onChange={(e) => setBatchNumber(e.target.value)}
+                                                    required
+                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none font-medium"
+                                                >
+                                                    <option value="">Select batch</option>
+                                                    {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
+                                                        <option key={n} value={n}>Batch {n}</option>
+                                                    ))}
+                                                </select>
+                                            </>
+                                        )}
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
