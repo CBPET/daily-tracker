@@ -2,7 +2,7 @@
 
 Enterprise daily performance tracking for the CBPET team: role-based access, task logging, analytics, and Supabase-backed persistence with Row Level Security (RLS).
 
-[![Deploy to GitHub Pages](https://github.com/ArockiaAlexander/Daily-Tracker/actions/workflows/deploy.yml/badge.svg)](https://github.com/ArockiaAlexander/Daily-Tracker/actions/workflows/deploy.yml)
+[![Deploy to GitHub Pages](https://github.com/cbpet/daily-tracker/actions/workflows/deploy.yml/badge.svg)](https://github.com/cbpet/daily-tracker/actions/workflows/deploy.yml)
 
 **Companion docs**
 
@@ -11,6 +11,9 @@ Enterprise daily performance tracking for the CBPET team: role-based access, tas
 | [Skills.md](./Skills.md) | Feature capabilities by skill / role |
 | [dev_remark.md](./dev_remark.md) | Developer notes, SQL order, pitfalls |
 | [test_use_case.md](./test_use_case.md) | Manual test cases |
+| [docs/github_setup.md](./docs/github_setup.md) | GitHub Pages deployment setup |
+| [docs/vercel_setup.md](./docs/vercel_setup.md) | Vercel deployment setup |
+| [docs/firebase_setup.md](./docs/firebase_setup.md) | Firebase Hosting deployment setup |
 
 ---
 
@@ -32,12 +35,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 Copy from `.env.example` if present. Never commit secrets.
 
+For hosted builds, store these values in the platform environment/secrets settings. The Supabase anon key is bundled into the browser app; this is expected, but production safety depends on Supabase Row Level Security. Never expose `SUPABASE_SERVICE_ROLE_KEY` in frontend code or client-side hosting settings.
+
 ```bash
 npm install
 npm run dev          # local
 npm run build        # production → dist/
 npm test             # node tests for performanceRating helpers
-npm run deploy       # optional gh-pages publish
+npm run deploy       # legacy gh-pages publish; production uses GitHub Actions
 ```
 
 ---
@@ -98,7 +103,7 @@ Supabase
 
 Display name from email: [`src/lib/displayName.js`](src/lib/displayName.js) (`jane.doe@co.com` → `Jane Doe`).
 
-**Email verified:** `profiles.email_confirmed_at` synced from `auth.users` ([`sql_commands/EMAIL_CONFIRMED_SYNC.sql`](sql_commands/EMAIL_CONFIRMED_SYNC.sql)). User Management shows Verified / Pending + Resend for pending.
+**Email verified:** `profiles.email_confirmed_at` sync support is part of the Supabase setup SQL. User Management shows Verified / Pending + Resend for pending.
 
 ---
 
@@ -141,7 +146,7 @@ Division overrides: `division_targets` (client + sub_division + task_type).
 | Miscellaneous | **1.0–4.0** only (UI + DB conditional checks) |
 | All other tasks | Estimated hours auto-calculate from completed work and target; taken hours must be **> 0** |
 
-SQL: [`sql_commands/MISC_HOURS_RANGE_CONSTRAINT.sql`](sql_commands/MISC_HOURS_RANGE_CONSTRAINT.sql)
+SQL constraints are included in the Supabase setup files under [`sql_commands/`](sql_commands/).
 
 ### Daily Summary
 
@@ -221,19 +226,21 @@ SQL: [`sql_commands/MISC_HOURS_RANGE_CONSTRAINT.sql`](sql_commands/MISC_HOURS_RA
 
 ## 7. Database and Edge Functions
 
-### New / incremental SQL (existing projects)
+### SQL setup
 
-Run in Supabase SQL Editor as needed (do **not** re-run full fresh setup on a live DB):
+Run the SQL files in order for a fresh Supabase project:
 
 | Script | Purpose |
 |--------|---------|
-| [`MISC_HOURS_RANGE_CONSTRAINT.sql`](sql_commands/MISC_HOURS_RANGE_CONSTRAINT.sql) | 1–4 hours only for Miscellaneous |
-| [`EMAIL_CONFIRMED_SYNC.sql`](sql_commands/EMAIL_CONFIRMED_SYNC.sql) | `email_confirmed_at` on profiles + sync |
-| [`WEEKLY_REPORT_DELIVERIES.sql`](sql_commands/WEEKLY_REPORT_DELIVERIES.sql) | Weekly report audit table |
-| [`CLIENT_HIERARCHY_MIGRATION.sql`](sql_commands/CLIENT_HIERARCHY_MIGRATION.sql) | Clients, group_lead, sub_division |
-| [`ADD_DIVISION_TARGETS.sql`](sql_commands/ADD_DIVISION_TARGETS.sql) | Division targets |
+| [`01_FRESH_CORE.sql`](sql_commands/01_FRESH_CORE.sql) | Core tables, auth/profile foundations, and RLS |
+| [`02_CLIENT_HIERARCHY.sql`](sql_commands/02_CLIENT_HIERARCHY.sql) | Clients, sub-divisions, and leadership hierarchy |
+| [`03_DIVISION_TARGETS.sql`](sql_commands/03_DIVISION_TARGETS.sql) | Division target configuration |
+| [`04_REQUEST_HUB.sql`](sql_commands/04_REQUEST_HUB.sql) | Smart Request Hub tables and policies |
+| [`05_NOTIFICATIONS.sql`](sql_commands/05_NOTIFICATIONS.sql) | Notification tables and support objects |
+| [`06_ANALYTICS.sql`](sql_commands/06_ANALYTICS.sql) | Enterprise analytics, feedback, and governance objects |
+| [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql) | Post-setup verification checks |
 
-Fresh project: [`FRESH_SUPABASE_SETUP.sql`](sql_commands/FRESH_SUPABASE_SETUP.sql) then hierarchy/targets/RLS fixes as documented in [`docs/OPEN_SOURCE_IMPLEMENTATION_GUIDE.md`](docs/OPEN_SOURCE_IMPLEMENTATION_GUIDE.md).
+See [`sql_commands/README.md`](sql_commands/README.md) for the database setup sequence.
 
 ### Edge Functions
 
@@ -273,11 +280,12 @@ Daily-Tracker/
 
 | Guide | Topic |
 |-------|-------|
-| [docs/OPEN_SOURCE_IMPLEMENTATION_GUIDE.md](docs/OPEN_SOURCE_IMPLEMENTATION_GUIDE.md) | Full setup |
-| [docs/INVITE_LINK_FIRST_TIME_PASSWORD_GUIDE.md](docs/INVITE_LINK_FIRST_TIME_PASSWORD_GUIDE.md) | Three onboarding paths |
-| [docs/GMAIL_SMTP_SETUP.md](docs/GMAIL_SMTP_SETUP.md) | Auth SMTP |
-| [docs/WEEKLY_PERFORMANCE_REPORTS.md](docs/WEEKLY_PERFORMANCE_REPORTS.md) | Weekly reports |
-| [docs/RBAC_OVERVIEW.md](docs/RBAC_OVERVIEW.md) | Roles |
+| [docs/github_setup.md](docs/github_setup.md) | GitHub Pages setup |
+| [docs/vercel_setup.md](docs/vercel_setup.md) | Vercel setup |
+| [docs/firebase_setup.md](docs/firebase_setup.md) | Firebase Hosting setup |
+| [sql_commands/README.md](sql_commands/README.md) | Supabase SQL setup order |
+| [dev_remark.md](dev_remark.md) | Developer notes and operational reminders |
+| [test_use_case.md](test_use_case.md) | Manual test scenarios |
 
 ---
 
