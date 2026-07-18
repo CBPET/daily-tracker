@@ -178,8 +178,8 @@ Manual end-to-end cases. Record Pass/Fail and notes per case.
 
 | | |
 |--|--|
-| **Steps** | Click Resend on pending user |
-| **Expected** | Success toast or clear error if Auth cannot resend; no crash |
+| **Steps** | Click Resend on pending invite vs pending confirm user |
+| **Expected** | Invite path: “Invite resent…”; signup path: “Confirmation email resent…”; clear error if Auth cannot resend; no crash |
 
 ### E6 — Manager cannot Admin Invite
 

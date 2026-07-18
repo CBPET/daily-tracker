@@ -18,12 +18,13 @@ Run each file once, in order:
 | 4 | `04_REQUEST_HUB.sql` | Smart Request Hub tables + storage bucket |
 | 5 | `05_NOTIFICATIONS.sql` | Enterprise notifications |
 | 6 | `06_ANALYTICS.sql` | Behaviour snapshots, feedback, `batch_number`, audit |
+| 7 | `07_ONBOARDING.sql` | `profiles.onboarding` (`invite` / `signup`) for Resend split |
 
 Then run:
 
 | Step | File |
 |------|------|
-| 7 | `VERIFY_ALL.sql` |
+| 8 | `VERIFY_ALL.sql` |
 
 ## After SQL
 

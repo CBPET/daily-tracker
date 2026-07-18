@@ -17,19 +17,31 @@ const Signup = ({ setView }) => {
         setError(null);
 
         try {
-            const { error: signupError } = await supabase.auth.signUp({
+            const { data: signupData, error: signupError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
                         full_name: fullName,
                         performer_name: fullName,
+                        onboarding: 'signup',
                     },
                     emailRedirectTo: getAuthRedirectUrl(),
                 },
             });
 
             if (signupError) throw signupError;
+
+            if (signupData?.user?.id) {
+                const { error: profilePatchError } = await supabase
+                    .from('profiles')
+                    .update({ onboarding: 'signup', performer_name: fullName, email })
+                    .eq('id', signupData.user.id);
+                if (profilePatchError && !/onboarding/i.test(profilePatchError.message || '')) {
+                    console.warn('Profile onboarding update:', profilePatchError.message);
+                }
+            }
+
             setSuccess(true);
         } catch (err) {
             setError(err.message);
@@ -60,7 +72,7 @@ const Signup = ({ setView }) => {
                 {success ? (
                     <div className="text-center">
                         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-2xl text-green-600 dark:text-green-400 text-sm font-bold">
-                            ✅ Account created! Log in with your email and password. Use the 🔒 icon after login to change your password anytime.
+                            ✅ Account created! Check your email for a confirmation link (if required), then log in with your email and password. Use the 🔒 icon after login to change your password anytime.
                         </div>
                         <button
                             onClick={() => setView('login')}

@@ -56,6 +56,7 @@ create table if not exists public.profiles (
   client_id text not null default 'DEFAULT_CLIENT',
   is_active boolean not null default true,
   email_confirmed_at timestamptz,
+  onboarding text check (onboarding is null or onboarding in ('invite', 'signup')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -205,7 +206,8 @@ begin
     performer_name,
     role,
     client_id,
-    email_confirmed_at
+    email_confirmed_at,
+    onboarding
   )
   values (
     new.id,
@@ -213,13 +215,20 @@ begin
     coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'performer_name', split_part(coalesce(new.email, ''), '@', 1), 'New Performer'),
     'performer',
     'DEFAULT_CLIENT',
-    new.email_confirmed_at
+    new.email_confirmed_at,
+    case
+      when new.raw_user_meta_data ->> 'onboarding' in ('invite', 'signup')
+        then new.raw_user_meta_data ->> 'onboarding'
+      when new.invited_at is not null then 'invite'
+      else 'signup'
+    end
   )
   on conflict (id) do update
   set
     email = excluded.email,
     performer_name = coalesce(public.profiles.performer_name, excluded.performer_name),
     email_confirmed_at = coalesce(excluded.email_confirmed_at, public.profiles.email_confirmed_at),
+    onboarding = coalesce(public.profiles.onboarding, excluded.onboarding),
     updated_at = now();
 
   return new;

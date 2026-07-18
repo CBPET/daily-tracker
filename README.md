@@ -97,13 +97,13 @@ Supabase
 
 | Path | Who | Behavior |
 |------|-----|----------|
-| **Admin Invite** | super_admin, general_manager | Email + role → Edge Function `invite-user` → Auth invite email → **InviteAccept** (display name + password) |
-| **Add New User** | super_admin, general_manager | Email + name + role → client `signUp` + profile update |
+| **Admin Invite** | super_admin, general_manager | Email + role → Edge Function `invite-user` → Auth invite email → **InviteAccept** (display name + password). Sets `profiles.onboarding = invite`. |
+| **Add New User** | super_admin, general_manager | Email + name + role → client `signUp` + profile update (`onboarding = signup`) |
 | **Provision User** | Admin UI | Copy `#signup` link / message; user self-registers as performer; role assigned later |
 
 Display name from email: [`src/lib/displayName.js`](src/lib/displayName.js) (`jane.doe@co.com` → `Jane Doe`).
 
-**Email verified:** `profiles.email_confirmed_at` sync support is part of the Supabase setup SQL. User Management shows Verified / Pending + Resend for pending.
+**Email verified:** `profiles.email_confirmed_at` sync support is part of the Supabase setup SQL. User Management shows **Verified** / **Pending invite** / **Pending confirm** + path-aware Resend. Apply [`sql_commands/07_ONBOARDING.sql`](sql_commands/07_ONBOARDING.sql) on existing DBs.
 
 ---
 

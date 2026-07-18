@@ -99,7 +99,7 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 
 - **Inputs:** Role, status, client/sub-division assignments  
 - **Outputs:** Updated `profiles` / `clients`  
-- **Rules:** Email Verified vs Pending from `email_confirmed_at`; status active/idle/archive  
+- **Rules:** Email Verified / Pending invite / Pending confirm from `email_confirmed_at` + `onboarding`; status active/idle/archive  
 - **Components:** `UserManagement`, `ClientManagement`, `AdminUserRow`
 
 ---
@@ -108,12 +108,13 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 
 | Mode | Skill behavior |
 |------|----------------|
-| Admin Invite | Email + role → `invite-user` function → invite email → InviteAccept |
-| Add New User | Immediate `signUp` + role on profile |
+| Admin Invite | Email + role → `invite-user` function → invite email → InviteAccept (`onboarding=invite`) |
+| Add New User | Immediate `signUp` + role on profile (`onboarding=signup`) |
 | Provision User | Clipboard `#signup` link; default performer |
 
-- **Resend:** Pending users in User Management (GM / super_admin)  
-- **Duplicate:** Verified email rejected on new invite  
+- **Resend:** Pending invite → invite email; Pending confirm → signup confirmation (`invite-user` action `resend`)  
+- **Duplicate:** Verified **or** any pending account rejected on new invite (use Resend / delete pending)  
+- **SQL:** `sql_commands/07_ONBOARDING.sql` on existing DBs
 
 ---
 

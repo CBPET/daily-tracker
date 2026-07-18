@@ -8,7 +8,7 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 
 - **Never** re-run [`sql_commands/FRESH_SUPABASE_SETUP.sql`](sql_commands/FRESH_SUPABASE_SETUP.sql) on an existing production project.
 - For a **brand-new** Supabase project, use [`sql_commands/fresh/`](sql_commands/fresh/README.md) (`01`–`06` + `VERIFY_ALL.sql`) instead of the legacy root FRESH script.
-- Use incremental scripts (`MISC_HOURS_*`, `EMAIL_CONFIRMED_SYNC`, hierarchy, targets, weekly deliveries).
+- Use incremental scripts (`MISC_HOURS_*`, `EMAIL_CONFIRMED_SYNC`, hierarchy, targets, weekly deliveries, `07_ONBOARDING.sql`).
 - Constraints added with `NOT VALID` still enforce new inserts; they do not rewrite old rows.
 
 ### Recommended SQL order for current feature set (existing DB)
@@ -20,7 +20,8 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 5. `WEEKLY_REPORT_DELIVERIES.sql` (if using weekly email)  
 6. **Enterprise:** `ROLE_RLS_PREFLIGHT.sql` → `SMART_REQUEST_HUB_PHASE1.sql` → `ENTERPRISE_NOTIFICATIONS_PHASE2.sql` → `ENTERPRISE_ANALYTICS_PHASE3.sql`  
 7. Run matching `*_VERIFY.sql` scripts after each enterprise migration  
-8. Duplicate audit only: `STATUS_ENTRIES_DUPLICATES_REPORT.sql` — **do not** add a unique index until cleaned
+8. Duplicate audit only: `STATUS_ENTRIES_DUPLICATES_REPORT.sql` — **do not** add a unique index until cleaned  
+9. Onboarding path split: `sql_commands/07_ONBOARDING.sql` (invite vs signup Resend)
 
 ---
 

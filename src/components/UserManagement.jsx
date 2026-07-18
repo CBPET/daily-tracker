@@ -54,10 +54,20 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const columns =
+        'id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at, onboarding';
+      let { data, error } = await supabase
         .from('profiles')
-        .select('id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at')
+        .select(columns)
         .order('performer_name');
+
+      // Existing DBs before 07_ONBOARDING.sql — fall back without onboarding
+      if (error && /onboarding/i.test(error.message || '')) {
+        ({ data, error } = await supabase
+          .from('profiles')
+          .select('id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at')
+          .order('performer_name'));
+      }
 
       if (error) throw error;
       setUsers(data || []);
@@ -98,6 +108,13 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
     return matchesSearch && matchesStatus && matchesVerify;
   });
 
+  const pendingKind = (user) => {
+    if (user.email_confirmed_at) return null;
+    if (user.onboarding === 'invite') return 'invite';
+    if (user.onboarding === 'signup') return 'signup';
+    return 'pending';
+  };
+
   const handleResendInvite = async (user) => {
     if (!canInvite || !onResendInvite) {
       showToast('Only super_admin / general_manager can resend invites', 'error');
@@ -109,8 +126,14 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
     }
     try {
       setResendingId(user.id);
-      await onResendInvite(user.email, user.role);
-      showToast(`Invite / confirmation resent to ${user.email}`, 'success');
+      const kind = pendingKind(user);
+      const payload = await onResendInvite(user.email, user.role, kind === 'pending' ? null : kind);
+      const resentKind = payload?.kind || payload?.onboarding || kind;
+      if (resentKind === 'signup') {
+        showToast(`Confirmation email resent to ${user.email}`, 'success');
+      } else {
+        showToast(`Invite resent to ${user.email}`, 'success');
+      }
       fetchUsers();
     } catch (err) {
       showToast(err.message || 'Resend failed', 'error');
@@ -342,6 +365,14 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
                           <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                             <CheckCircle size={10} /> Verified
                           </span>
+                        ) : user.onboarding === 'invite' ? (
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
+                            <Clock size={10} /> Pending invite
+                          </span>
+                        ) : user.onboarding === 'signup' ? (
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                            <Clock size={10} /> Pending confirm
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                             <Clock size={10} /> Pending
@@ -388,10 +419,20 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
                               disabled={resendingId === user.id}
                               onClick={() => handleResendInvite(user)}
                               className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 rounded hover:bg-indigo-200 dark:hover:bg-indigo-900 transition flex items-center gap-1 disabled:opacity-50"
-                              title="Resend invite / confirmation email"
+                              title={
+                                user.onboarding === 'signup'
+                                  ? 'Resend signup confirmation email'
+                                  : user.onboarding === 'invite'
+                                    ? 'Resend invite email'
+                                    : 'Resend invite or confirmation email'
+                              }
                             >
                               <Mail size={12} />
-                              {resendingId === user.id ? '…' : 'Resend'}
+                              {resendingId === user.id
+                                ? '…'
+                                : user.onboarding === 'signup'
+                                  ? 'Resend confirm'
+                                  : 'Resend invite'}
                             </button>
                           )}
                         </div>

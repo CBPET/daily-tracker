@@ -554,7 +554,11 @@ const App = () => {
                 email: newUserEmail,
                 password: tempPassword,
                 options: {
-                    data: { full_name: newUserName, performer_name: newUserName },
+                    data: {
+                        full_name: newUserName,
+                        performer_name: newUserName,
+                        onboarding: 'signup',
+                    },
                     emailRedirectTo: getAuthRedirectUrl(),
                 },
             });
@@ -578,10 +582,24 @@ const App = () => {
                     role: newUserRole,
                     client_id: 'DEFAULT_CLIENT',
                     email: newUserEmail,
+                    onboarding: 'signup',
                 })
                 .eq('id', authData.user.id);
 
-            if (profileError) throw profileError;
+            if (profileError && /onboarding/i.test(profileError.message || '')) {
+                const { error: retryError } = await supabase
+                    .from('profiles')
+                    .update({
+                        performer_name: newUserName,
+                        role: newUserRole,
+                        client_id: 'DEFAULT_CLIENT',
+                        email: newUserEmail,
+                    })
+                    .eq('id', authData.user.id);
+                if (retryError) throw retryError;
+            } else if (profileError) {
+                throw profileError;
+            }
 
             setToastMessage(`✅ User "${newUserName}" created with ${newUserRole} role. Confirmation email sent to ${newUserEmail}.`);
             setShowToast(true);
@@ -1054,7 +1072,7 @@ const App = () => {
 
                             {/* USER MANAGEMENT SECTION */}
                             {adminSubTab === 'users' && ['super_admin', 'general_manager', 'manager'].includes(profile?.role) ? (
-                                <UserManagement currentUserRole={profile?.role} onResendInvite={async (email, role) => {
+                                <UserManagement currentUserRole={profile?.role} onResendInvite={async (email, role, onboarding) => {
                                     const { data: { session: adminSession } } = await supabase.auth.getSession();
                                     if (!adminSession?.access_token) throw new Error('Not signed in');
                                     const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`;
@@ -1070,6 +1088,7 @@ const App = () => {
                                             email,
                                             role: role || 'performer',
                                             displayName: deriveDisplayNameFromEmail(email),
+                                            onboarding: onboarding || undefined,
                                         }),
                                     });
                                     const payload = await res.json().catch(() => ({}));
