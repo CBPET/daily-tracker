@@ -8,3 +8,14 @@ Secret keys
 
 ANON: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weXh5b3B2Y2ZscnNmZHR5cHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNjUzNjcsImV4cCI6MjA5OTk0MTM2N30.U-k9QC2HTvyFng_DjG4zSqmQAkPwA0wLoLPHubpd76M
 secret: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weXh5b3B2Y2ZscnNmZHR5cHdoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDM2NTM2NywiZXhwIjoyMDk5OTQxMzY3fQ.jCB_kVGbRMEc2gel4oaM_f51-2KxHFLkYQiUf-qVKlA
+
+
+
+Tracker Login
+ayaz@company.co
+ayaz_admin_cbpet_tracker!2026
+
+Generated app password
+ukdt xwzc oria ipht
+dtzd askk prkz wgkv
+
