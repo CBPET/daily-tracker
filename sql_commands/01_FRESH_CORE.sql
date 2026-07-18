@@ -55,6 +55,7 @@ create table if not exists public.profiles (
   reports_to uuid references auth.users (id) on delete set null,
   client_id text not null default 'DEFAULT_CLIENT',
   is_active boolean not null default true,
+  status text not null default 'active' check (status in ('active', 'idle', 'archive')),
   email_confirmed_at timestamptz,
   onboarding text check (onboarding is null or onboarding in ('invite', 'signup')),
   created_at timestamptz not null default now(),
@@ -139,6 +140,7 @@ create index if not exists idx_profiles_role on public.profiles (role);
 create index if not exists idx_profiles_team_id on public.profiles (team_id);
 create index if not exists idx_profiles_reports_to on public.profiles (reports_to);
 create index if not exists idx_profiles_active on public.profiles (is_active) where is_active = true;
+create index if not exists idx_profiles_status on public.profiles (status);
 
 create index if not exists idx_workflow_assignments_user_id on public.workflow_assignments (user_id);
 create index if not exists idx_workflow_assignments_workflow_id on public.workflow_assignments (workflow_id);

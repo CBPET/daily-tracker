@@ -54,26 +54,44 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const columns =
+      const fullColumns =
         'id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at, onboarding';
+      const noOnboarding =
+        'id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at';
+      const noStatus =
+        'id, performer_name, role, team_id, client_id, client_ref, sub_division, email, email_confirmed_at, onboarding';
+      const minimal =
+        'id, performer_name, role, team_id, client_id, client_ref, sub_division, email, email_confirmed_at';
+
       let { data, error } = await supabase
         .from('profiles')
-        .select(columns)
+        .select(fullColumns)
         .order('performer_name');
 
-      // Existing DBs before 07_ONBOARDING.sql — fall back without onboarding
-      if (error && /onboarding/i.test(error.message || '')) {
-        ({ data, error } = await supabase
-          .from('profiles')
-          .select('id, performer_name, role, team_id, client_id, client_ref, sub_division, email, status, email_confirmed_at')
-          .order('performer_name'));
+      if (error && /onboarding/i.test(error.message || '') && /status/i.test(error.message || '')) {
+        ({ data, error } = await supabase.from('profiles').select(minimal).order('performer_name'));
+      } else if (error && /onboarding/i.test(error.message || '')) {
+        ({ data, error } = await supabase.from('profiles').select(noOnboarding).order('performer_name'));
+        if (error && /status/i.test(error.message || '')) {
+          ({ data, error } = await supabase.from('profiles').select(minimal).order('performer_name'));
+        }
+      } else if (error && /status/i.test(error.message || '')) {
+        ({ data, error } = await supabase.from('profiles').select(noStatus).order('performer_name'));
+        if (error && /onboarding/i.test(error.message || '')) {
+          ({ data, error } = await supabase.from('profiles').select(minimal).order('performer_name'));
+        }
       }
 
       if (error) throw error;
       setUsers(data || []);
     } catch (err) {
       console.error('Error fetching users:', err);
-      showToast('Error loading users', 'error');
+      const msg = err?.message || '';
+      if (/status/i.test(msg)) {
+        showToast('profiles.status missing — run sql_commands/08_PROFILES_STATUS.sql in Supabase', 'error');
+      } else {
+        showToast('Error loading users', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -192,13 +210,25 @@ export default function UserManagement({ currentUserRole, onResendInvite }) {
     try {
       setLoading(true);
       const { error } = await supabase.from('profiles').update({ status: editingStatus }).eq('id', userId);
-      if (error) throw error;
+      if (error) {
+        if (/status/i.test(error.message || '') || error.code === '42703') {
+          showToast('profiles.status missing — run sql_commands/08_PROFILES_STATUS.sql in Supabase', 'error');
+          return;
+        }
+        throw error;
+      }
+      // Keep is_active in sync when status column exists
+      if (editingStatus === 'archive') {
+        await supabase.from('profiles').update({ is_active: false }).eq('id', userId);
+      } else if (editingStatus === 'active' || editingStatus === 'idle') {
+        await supabase.from('profiles').update({ is_active: true }).eq('id', userId);
+      }
       showToast(`Status updated to ${editingStatus}`, 'success');
       setSelectedUser(null);
       setEditingStatus(null);
       fetchUsers();
     } catch (err) {
-      showToast('Error updating status', 'error');
+      showToast('Error updating status: ' + (err.message || 'unknown'), 'error');
     } finally {
       setLoading(false);
     }

@@ -41,7 +41,7 @@ select table_name, column_name
 from information_schema.columns
 where table_schema = 'public'
   and (
-    (table_name = 'profiles' and column_name in ('role', 'client_id', 'client_ref', 'sub_division', 'team_id', 'onboarding'))
+    (table_name = 'profiles' and column_name in ('role', 'client_id', 'client_ref', 'sub_division', 'team_id', 'onboarding', 'status'))
     or (table_name = 'status_entries' and column_name in ('client_id', 'sub_division', 'batch_number', 'created_at', 'workflow_id'))
     or (table_name = 'request_hub_tickets' and column_name in ('ticket_number', 'status', 'assigned_to', 'archived_at'))
   )

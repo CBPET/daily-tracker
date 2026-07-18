@@ -19,12 +19,13 @@ Run each file once, in order:
 | 5 | `05_NOTIFICATIONS.sql` | Enterprise notifications |
 | 6 | `06_ANALYTICS.sql` | Behaviour snapshots, feedback, `batch_number`, audit |
 | 7 | `07_ONBOARDING.sql` | `profiles.onboarding` (`invite` / `signup`) for Resend split |
+| 8 | `08_PROFILES_STATUS.sql` | `profiles.status` (`active` / `idle` / `archive`) for User Management |
 
 Then run:
 
 | Step | File |
 |------|------|
-| 8 | `VERIFY_ALL.sql` |
+| 9 | `VERIFY_ALL.sql` |
 
 ## After SQL
 
