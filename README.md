@@ -197,7 +197,7 @@ Next-phase project tracking uses separate project tables instead of adding intak
 | Project master | `project_records`: title, client, sub-division, counts, due dates, remarks, queries |
 | Client fields | `project_field_configs` + `client_fields` JSONB for OUP / OOH / TNF / OHO-OHB variants |
 | Schedule | `project_schedule_tasks`: workflow stage, division, task, performer assignment, due dates, completion |
-| Raw paste | `src/lib/projectFieldConfig.js` maps pasted Google Sheet headers into normalized fields |
+| Raw paste | `src/lib/projects/projectFieldConfig.js` maps pasted Google Sheet headers into normalized fields |
 
 See [`docs/PROJECT_DATABASE.md`](docs/PROJECT_DATABASE.md).
 
@@ -252,7 +252,11 @@ Run the SQL files in order for a fresh Supabase project:
 | [`04_REQUEST_HUB.sql`](sql_commands/04_REQUEST_HUB.sql) | Smart Request Hub tables and policies |
 | [`05_NOTIFICATIONS.sql`](sql_commands/05_NOTIFICATIONS.sql) | Notification tables and support objects |
 | [`06_ANALYTICS.sql`](sql_commands/06_ANALYTICS.sql) | Enterprise analytics, feedback, and governance objects |
+| [`07_ONBOARDING.sql`](sql_commands/07_ONBOARDING.sql) | Profile onboarding paths for invite and signup flows |
+| [`08_PROFILES_STATUS.sql`](sql_commands/08_PROFILES_STATUS.sql) | Profile lifecycle status for User Management |
+| [`09_REQUEST_HUB_RLS_FIX.sql`](sql_commands/09_REQUEST_HUB_RLS_FIX.sql) | Request Hub creator visibility fix |
 | [`10_PROJECT_DATABASE.sql`](sql_commands/10_PROJECT_DATABASE.sql) | Project master data, configurable client fields, schedule tracking |
+| [`11_PROJECT_SCHEDULE_DATE_ACL.sql`](sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql) | Lead-only schedule date ACL and structured audit reasons |
 | [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql) | Post-setup verification checks |
 
 See [`sql_commands/README.md`](sql_commands/README.md) for the database setup sequence.

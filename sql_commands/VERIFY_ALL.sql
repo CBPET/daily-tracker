@@ -1,5 +1,5 @@
 -- ==========================================
--- Fresh greenfield verification (run after 01–06)
+-- Fresh greenfield verification (run after 01–11)
 -- ==========================================
 
 -- 1. Active role enum labels
@@ -51,6 +51,7 @@ where table_schema = 'public'
     or (table_name = 'project_field_configs' and column_name in ('client_code', 'config', 'is_active'))
     or (table_name = 'project_records' and column_name in ('title', 'client_id', 'sub_division', 'client_fields', 'raw_source', 'due_date', 'revised_due_date'))
     or (table_name = 'project_schedule_tasks' and column_name in ('project_id', 'workflow_stage', 'task_type', 'division', 'assigned_to', 'due_from_performer', 'completed_date'))
+    or (table_name = 'project_schedule_events' and column_name = 'reason_code')
   )
 order by table_name, column_name;
 
@@ -99,11 +100,22 @@ where routine_schema = 'public'
     'handle_new_user',
     'can_view_request_hub_ticket',
     'can_manage_request_hub_ticket',
-    'can_manage_project_database'
+    'can_manage_project_database',
+    'enforce_project_schedule_date_acl'
   )
 order by routine_name;
 
--- 8. Health counts (empty is fine on fresh project)
+-- 8. Project schedule date ACL triggers
+select event_object_table, trigger_name
+from information_schema.triggers
+where trigger_schema = 'public'
+  and trigger_name in (
+    'trg_enforce_project_schedule_task_date_acl',
+    'trg_enforce_project_record_date_acl'
+  )
+order by event_object_table, trigger_name;
+
+-- 9. Health counts (empty is fine on fresh project)
 select
   (select count(*) from public.profiles) as profiles_count,
   (select count(*) from public.clients) as clients_count,

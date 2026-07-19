@@ -15,15 +15,38 @@ Project intake is different data: title metadata, client-specific fields, due da
 | `project_field_configs` | JSON configuration for default and client-specific intake fields |
 | `project_records` | One row per project/title with basic project information |
 | `project_schedule_tasks` | One row per project workflow stage, assignment, due dates, and completion tracking |
-| `project_schedule_events` | Audit/event trail for project and schedule changes |
+| `project_schedule_events` | Audit/event trail for project and schedule changes (incl. date edits + reason) |
 
-Apply migration:
+Apply migrations:
 
 ```bash
 sql_commands/10_PROJECT_DATABASE.sql
+sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql
 ```
 
-Run it after `02_CLIENT_HIERARCHY.sql` because it can reference `clients`.
+Run `10_` after `02_CLIENT_HIERARCHY.sql` because it can reference `clients`. Run `11_` after `10_` on live or greenfield.
+
+## Frontend modules
+
+Do not add Project Database logic to `App.jsx`. The app only mounts the projects shell.
+
+```text
+src/components/projects/
+  ProjectsShell.jsx              # tabs + data orchestration
+  ProjectManualForm.jsx
+  ProjectPasteIntake.jsx
+  ProjectPubKitImport.jsx
+  ProjectFieldConfigEditor.jsx
+  ProjectTracker.jsx             # schedule grid; lead date edits via DateReasonModal
+  ProjectScheduleDashboard.jsx   # Ontime/Ahead/Delay + Today Due/Long Delay/Delivery
+  DateReasonModal.jsx
+
+src/lib/projects/
+  projectFieldConfig.js
+  projectScheduleEvents.js
+  projectScheduleMetrics.js
+  projectScheduleScope.js
+```
 
 ## Project Fields
 
@@ -52,7 +75,7 @@ Client-specific fields are stored in `project_records.client_fields` as JSONB. T
 Configured in both:
 
 - `project_field_configs.config` in Supabase
-- [projectFieldConfig.js](../src/lib/projectFieldConfig.js) for frontend defaults and raw-paste mapping
+- [projectFieldConfig.js](../src/lib/projects/projectFieldConfig.js) for frontend defaults and raw-paste mapping
 
 Initial clients:
 
@@ -89,6 +112,34 @@ Completed Date
 ```
 
 Leads/managers can assign any performer to any division/task through these schedule rows. Performers can see their assigned project schedule tasks.
+
+## Date ACL and audit (Phase A)
+
+- Effective due date = `coalesce(revised_due_date, due_date)`.
+- Only `super_admin`, `general_manager`, `manager`, `group_lead`, `team_lead` can change due / revised due / due-from-performer (enforced in UI and by `11_PROJECT_SCHEDULE_DATE_ACL.sql` trigger).
+- Assignees may still set `completed_date` / `completed_from_performer` on their own tasks.
+- Lead date edits require a reason (`availability`, `priority`, `leave`, `workload_delay`, `client_change`, `other`) and write `project_schedule_events` (`event_type = schedule_date_change`).
+
+## Schedule Dashboard (Phase B)
+
+Dashboard tab KPIs (period: week / month / quarter / half-year / year):
+
+| KPI | Meaning |
+|---|---|
+| Ontime | Open tasks due today in period (leads+) |
+| Ahead | Open tasks due after today in period (leads+) |
+| Delay | Open tasks past due in period (leads+) |
+| Today Due | Open tasks due today |
+| Long Delay | Open tasks overdue by 7+ days |
+| Delivery | Tasks completed within the selected period |
+
+Scope:
+
+| Role | Scope |
+|---|---|
+| Performer | Tasks assigned to me (Today Due / Long Delay / Delivery) |
+| Team / Group Lead | Tasks visible via RLS (full KPI set) |
+| Manager / GM / Super Admin | Full KPI set + reason-breakdown chart |
 
 ## Raw Google Sheet Paste
 

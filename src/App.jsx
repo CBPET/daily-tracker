@@ -15,7 +15,7 @@ import ChangePassword from './components/ChangePassword';
 import AdminResetUserPassword from './components/AdminResetUserPassword';
 import AdminUserRow from './components/AdminUserRow';
 import ClientManagement from './components/ClientManagement';
-import ProjectDatabaseManager from './components/ProjectDatabaseManager';
+import ProjectDatabaseManager from './components/projects';
 import SmartRequestHub from './components/requestHub/SmartRequestHub';
 import { NotificationProvider } from './components/notifications/NotificationProvider';
 import NotificationBell from './components/notifications/NotificationBell';
