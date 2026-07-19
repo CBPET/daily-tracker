@@ -14,7 +14,7 @@ import RequestList from './RequestList';
 import RequestCreateForm from './RequestCreateForm';
 import RequestDetail from './RequestDetail';
 
-export default function SmartRequestHub({ profile, clients = [], onToast, initialTicketId }) {
+export default function SmartRequestHub({ profile, onToast, initialTicketId }) {
   const [view, setView] = useState('dashboard');
   const [tickets, setTickets] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -201,8 +201,6 @@ export default function SmartRequestHub({ profile, clients = [], onToast, initia
 
       {view === 'create' && (
         <RequestCreateForm
-          clients={clients}
-          profile={profile}
           busy={busy}
           onCancel={() => setView('list')}
           onSubmit={handleCreate}

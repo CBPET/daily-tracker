@@ -1004,7 +1004,6 @@ const App = () => {
                     ) : activeTab === 'request_hub' && requestHubEnabled ? (
                         <SmartRequestHub
                             profile={profile}
-                            clients={clients}
                             initialTicketId={requestHubTicketId}
                             onToast={(msg) => { setToastMessage(msg); setShowToast(true); }}
                         />

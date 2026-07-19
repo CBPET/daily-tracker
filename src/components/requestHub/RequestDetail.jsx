@@ -58,7 +58,6 @@ export default function RequestDetail({
             <StatusBadge status={ticket.status} />
             <PriorityLabel priority={ticket.priority} />
             <span className="text-xs text-gray-500">{ticket.category}</span>
-            {ticket.client_id && <span className="text-xs text-gray-500">{ticket.client_id}</span>}
           </div>
         </div>
       </div>

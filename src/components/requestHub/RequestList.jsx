@@ -46,7 +46,6 @@ export default function RequestList({ tickets, onSelect, profileNameById }) {
             <th className="px-4 py-3">Title</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Priority</th>
-            <th className="px-4 py-3">Client</th>
             <th className="px-4 py-3">Assignee</th>
             <th className="px-4 py-3">Created</th>
           </tr>
@@ -62,7 +61,6 @@ export default function RequestList({ tickets, onSelect, profileNameById }) {
               <td className="px-4 py-3 font-semibold max-w-[240px] truncate">{t.title}</td>
               <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
               <td className="px-4 py-3"><PriorityLabel priority={t.priority} /></td>
-              <td className="px-4 py-3">{t.client_id || '—'}</td>
               <td className="px-4 py-3">{t.assigned_to ? (profileNameById?.[t.assigned_to] || 'Assigned') : '—'}</td>
               <td className="px-4 py-3 text-xs text-gray-500">
                 {t.created_date ? new Date(t.created_date).toLocaleDateString() : '—'}

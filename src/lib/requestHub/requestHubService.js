@@ -40,11 +40,11 @@ export async function createRequest(payload, files = [], profile) {
     typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : null;
 
   const baseRow = {
-    project_name: payload.project_name || null,
-    client_id: payload.client_id || null,
-    client_ref: payload.client_ref || null,
-    sub_division: payload.sub_division || null,
-    task_type: payload.task_type || null,
+    project_name: null,
+    client_id: null,
+    client_ref: null,
+    sub_division: null,
+    task_type: null,
     category: payload.category,
     title: payload.title,
     description: payload.description,

@@ -37,10 +37,13 @@ export function NotificationProvider({ children, enabled = true }) {
   }, [active, centerOpen]);
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return undefined;
+    }
     refreshNotifications();
-    const id = setInterval(refreshNotifications, 60000);
-    return () => clearInterval(id);
+    return undefined;
   }, [active, refreshNotifications]);
 
   const value = useMemo(

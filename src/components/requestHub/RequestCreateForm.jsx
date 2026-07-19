@@ -2,15 +2,9 @@ import { useState } from 'react';
 import ScreenshotUploader from './ScreenshotUploader';
 
 const CATEGORIES = ['Bug', 'Improvement', 'Feature Update', 'Enhancement'];
-const SUBS = ['PreEdit', 'Validation'];
 
-export default function RequestCreateForm({ clients, profile, onSubmit, onCancel, busy }) {
+export default function RequestCreateForm({ onSubmit, onCancel, busy }) {
   const [form, setForm] = useState({
-    project_name: '',
-    client_id: profile?.client_id || '',
-    client_ref: profile?.client_ref || '',
-    sub_division: profile?.sub_division || '',
-    task_type: '',
     category: 'Bug',
     title: '',
     description: '',
@@ -21,15 +15,6 @@ export default function RequestCreateForm({ clients, profile, onSubmit, onCancel
   const [error, setError] = useState('');
 
   const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
-
-  const onClientChange = (code) => {
-    const c = (clients || []).find((x) => x.code === code);
-    setForm((f) => ({
-      ...f,
-      client_id: code || '',
-      client_ref: c?.id || '',
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,46 +33,6 @@ export default function RequestCreateForm({ clients, profile, onSubmit, onCancel
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
       <div className="grid md:grid-cols-2 gap-4">
-        <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Project name (optional)</span>
-          <input
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
-            value={form.project_name}
-            onChange={(e) => setField('project_name', e.target.value)}
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Client</span>
-          <select
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
-            value={form.client_id}
-            onChange={(e) => onClientChange(e.target.value)}
-          >
-            <option value="">Select client</option>
-            {(clients || []).map((c) => (
-              <option key={c.id} value={c.code}>{c.code} — {c.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sub-division (optional)</span>
-          <select
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
-            value={form.sub_division}
-            onChange={(e) => setField('sub_division', e.target.value)}
-          >
-            <option value="">—</option>
-            {SUBS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </label>
-        <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Task type (optional)</span>
-          <input
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
-            value={form.task_type}
-            onChange={(e) => setField('task_type', e.target.value)}
-          />
-        </label>
         <label className="block space-y-1">
           <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Category *</span>
           <select
