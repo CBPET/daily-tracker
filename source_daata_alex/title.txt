@@ -1,0 +1,66 @@
+Existing team internal division PreEdit and Validation
+
+
+
+workflow order
+prestyle->cast-off->preedit->FP Validation -> Revises Validation
+Normalisation->cast-off->FP Validation-> Revises Validation
+
+
+
+
+
+Schudule and assign task
+Leads have add into db new projectall details
+also can assign to any  performer  any division | any task
+
+we required `ProjectDataBase` for separate tabe right ?
+Leads can 
+option 1: enter form fields 
+option 2: copy paste raw from google can transfer into field
+some client have sub divsion
+
+Title	Client	Sub Division	Page Count	Complexity Level	 Status
+
+Text Word Count	
+Reference Count	
+Reference count in notes
+Ref Word Count	
+Reference style	
+
+	
+client based fiels
+	OUP:
+		Job Required (MUFO|Typecode-Only|TS|Reconvert|Prestyle|Preedit|MS Prep|)
+		XML Product (Product/Nonproduct)
+		SUB_DIV: Acad Oss|Acad US|Acad Ind|Acad UK
+	OOH:
+		TAT(Days): 1 to 5
+		SUB_DIV:Bloomsbury UK|Bloomsbury US|JHUP|NNA|LLP|OOH|OOH_AGE_PUB|OOH_ARC|OOH_ARM|OOH_BritAcad|OOH_BUP|OOH_CP|OOH_GS|OOH_IBT|OOH_IBT-Flexi|OOH_MIP|OOH_MUP|OOH_RA Press|OOH_RSC|OOH_SUP|OOH_UCL|OOH_UL|OOH_UMP|OOH_BB|OOH-GLB|OOH-ICE|OOH-JKP|SUP|TNF_SPIB|Intellect|OOH_PI|OOH_Scribe|OOH_WITS|OOH_MC|BUP-RSP|OOH_BA|OOH_YUP|OOH_YUP|BAR
+	TNF:
+		Model: Onshore|Offshore|Hybrid
+		SUB_DIV: TNF_FSM|OOH_TNF
+	OHO_OHB:
+		SUB_DIV: US|UK
+	
+	
+Date related fields
+	default_all: Login Date|Revised Login Date	
+	default_all: Due Date|Revised Due Date
+	oup:
+	ooh:
+	oho_ohb:	
+		Prestyle/Style:			
+			Allocated to Performer|Due from Performer|Completed from Performer
+			Due Date|Revised Due Date|Completed Date
+		cast-off/CastOff:		
+			Allocated to Performer|Due from Performer|Completed from Performer
+			Due Date|Revised Due Date|Completed Date
+		Preedit/Normalisation:			
+			Allocated to Performer|Due from Performer|Completed from Performer
+			Due Date|Revised Due Date|Completed Date
+		
+remarks fields
+	queries
+	remark
+	
