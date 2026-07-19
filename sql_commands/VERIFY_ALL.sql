@@ -32,7 +32,11 @@ where table_schema = 'public'
     'notification_actions',
     'user_behaviour_snapshots',
     'feedback_records',
-    'enterprise_audit_log'
+    'enterprise_audit_log',
+    'project_field_configs',
+    'project_records',
+    'project_schedule_tasks',
+    'project_schedule_events'
   )
 order by table_name;
 
@@ -44,6 +48,9 @@ where table_schema = 'public'
     (table_name = 'profiles' and column_name in ('role', 'client_id', 'client_ref', 'sub_division', 'team_id', 'onboarding', 'status'))
     or (table_name = 'status_entries' and column_name in ('client_id', 'sub_division', 'batch_number', 'created_at', 'workflow_id'))
     or (table_name = 'request_hub_tickets' and column_name in ('ticket_number', 'status', 'assigned_to', 'archived_at'))
+    or (table_name = 'project_field_configs' and column_name in ('client_code', 'config', 'is_active'))
+    or (table_name = 'project_records' and column_name in ('title', 'client_id', 'sub_division', 'client_fields', 'raw_source', 'due_date', 'revised_due_date'))
+    or (table_name = 'project_schedule_tasks' and column_name in ('project_id', 'workflow_stage', 'task_type', 'division', 'assigned_to', 'due_from_performer', 'completed_date'))
   )
 order by table_name, column_name;
 
@@ -59,7 +66,11 @@ where schemaname = 'public'
     'request_hub_tickets',
     'notifications',
     'user_behaviour_snapshots',
-    'feedback_records'
+    'feedback_records',
+    'project_field_configs',
+    'project_records',
+    'project_schedule_tasks',
+    'project_schedule_events'
   )
 order by tablename;
 
@@ -71,7 +82,7 @@ where schemaname = 'public'
     qual::text ilike '%manager%'
     or with_check::text ilike '%manager%'
   )
-  and tablename in ('status_entries', 'clients', 'division_targets', 'performance_metrics')
+  and tablename in ('status_entries', 'clients', 'division_targets', 'performance_metrics', 'project_field_configs', 'project_records', 'project_schedule_tasks')
 order by tablename, policyname;
 
 -- 6. Storage bucket for Request Hub
@@ -87,7 +98,8 @@ where routine_schema = 'public'
     'get_user_role_level',
     'handle_new_user',
     'can_view_request_hub_ticket',
-    'can_manage_request_hub_ticket'
+    'can_manage_request_hub_ticket',
+    'can_manage_project_database'
   )
 order by routine_name;
 
@@ -95,5 +107,7 @@ order by routine_name;
 select
   (select count(*) from public.profiles) as profiles_count,
   (select count(*) from public.clients) as clients_count,
+  (select count(*) from public.project_field_configs) as project_field_configs_count,
+  (select count(*) from public.project_records) as project_records_count,
   (select count(*) from public.request_hub_tickets) as tickets_count,
   (select count(*) from public.notifications) as notifications_count;

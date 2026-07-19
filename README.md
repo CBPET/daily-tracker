@@ -11,6 +11,7 @@ Enterprise daily performance tracking for the CBPET team: role-based access, tas
 | [Skills.md](./Skills.md) | Feature capabilities by skill / role |
 | [dev_remark.md](./dev_remark.md) | Developer notes, SQL order, pitfalls |
 | [test_use_case.md](./test_use_case.md) | Manual test cases |
+| [docs/PROJECT_DATABASE.md](./docs/PROJECT_DATABASE.md) | Project master data, client fields, schedule tracking |
 | [docs/github_setup.md](./docs/github_setup.md) | GitHub Pages deployment setup |
 | [docs/vercel_setup.md](./docs/vercel_setup.md) | Vercel deployment setup |
 | [docs/firebase_setup.md](./docs/firebase_setup.md) | Firebase Hosting deployment setup |
@@ -24,7 +25,7 @@ Enterprise daily performance tracking for the CBPET team: role-based access, tas
 | Stack | React 18, Vite 6, Tailwind CSS 3, Supabase (Auth + Postgres + RLS), Chart.js, Lucide, SheetJS (`xlsx`) |
 | Hosting | GitHub Pages via Actions (`.github/workflows/deploy.yml`) |
 | Auth | Email/password; hash-based in-app routes (`#form`, `#analytics`, `#request-hub`, `#admin`) |
-| Data | `status_entries`, `profiles`, `clients`, `division_targets`, `request_hub_*`, `notifications`, behaviour snapshots / feedback as configured |
+| Data | `status_entries`, `project_records`, `project_schedule_tasks`, `profiles`, `clients`, `division_targets`, `request_hub_*`, `notifications`, behaviour snapshots / feedback as configured |
 
 ### Environment
 
@@ -41,7 +42,7 @@ For hosted builds, store these values in the platform environment/secrets settin
 npm install
 npm run dev          # local
 npm run build        # production → dist/
-npm test             # node tests for performanceRating helpers
+npm test             # node tests for rating + project config helpers
 npm run deploy       # legacy gh-pages publish; production uses GitHub Actions
 ```
 
@@ -54,7 +55,7 @@ Browser (React SPA)
   ├── #form          Entry Form + Daily Summary (+ optional batch / duplicate guard)
   ├── #analytics     Dashboard (Overview / Trends / Targets / Performance Rating / Behaviour Intelligence)
   ├── #request-hub   Smart Request Hub (tickets, workflow, screenshots)
-  └── #admin         Administration (Users / Clients / Workflows)
+  └── #admin         Administration (Users / Clients / Workflows / Project setup)
 
 Supabase
   ├── Auth (SMTP = Gmail for auth/invite emails)
@@ -187,6 +188,19 @@ SQL constraints are included in the Supabase setup files under [`sql_commands/`]
 | [`DivisionTargetsManager.jsx`](src/components/DivisionTargetsManager.jsx) | CRUD custom targets per client/sub-division/task |
 | [`DataExport.jsx`](src/components/DataExport.jsx) | CSV/XLSX for filtered or all entries |
 
+### Project database and scheduling
+
+Next-phase project tracking uses separate project tables instead of adding intake fields to daily `status_entries`.
+
+| Area | Logic |
+|------|-------|
+| Project master | `project_records`: title, client, sub-division, counts, due dates, remarks, queries |
+| Client fields | `project_field_configs` + `client_fields` JSONB for OUP / OOH / TNF / OHO-OHB variants |
+| Schedule | `project_schedule_tasks`: workflow stage, division, task, performer assignment, due dates, completion |
+| Raw paste | `src/lib/projectFieldConfig.js` maps pasted Google Sheet headers into normalized fields |
+
+See [`docs/PROJECT_DATABASE.md`](docs/PROJECT_DATABASE.md).
+
 ### Administration
 
 | Component | Logic |
@@ -238,6 +252,7 @@ Run the SQL files in order for a fresh Supabase project:
 | [`04_REQUEST_HUB.sql`](sql_commands/04_REQUEST_HUB.sql) | Smart Request Hub tables and policies |
 | [`05_NOTIFICATIONS.sql`](sql_commands/05_NOTIFICATIONS.sql) | Notification tables and support objects |
 | [`06_ANALYTICS.sql`](sql_commands/06_ANALYTICS.sql) | Enterprise analytics, feedback, and governance objects |
+| [`10_PROJECT_DATABASE.sql`](sql_commands/10_PROJECT_DATABASE.sql) | Project master data, configurable client fields, schedule tracking |
 | [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql) | Post-setup verification checks |
 
 See [`sql_commands/README.md`](sql_commands/README.md) for the database setup sequence.
@@ -283,6 +298,7 @@ Daily-Tracker/
 | [docs/github_setup.md](docs/github_setup.md) | GitHub Pages setup |
 | [docs/vercel_setup.md](docs/vercel_setup.md) | Vercel setup |
 | [docs/firebase_setup.md](docs/firebase_setup.md) | Firebase Hosting setup |
+| [docs/PROJECT_DATABASE.md](docs/PROJECT_DATABASE.md) | Project database and schedule tracking |
 | [sql_commands/README.md](sql_commands/README.md) | Supabase SQL setup order |
 | [dev_remark.md](dev_remark.md) | Developer notes and operational reminders |
 | [test_use_case.md](test_use_case.md) | Manual test scenarios |

@@ -222,6 +222,47 @@ npm run build
 
 ---
 
+## H. Project Database and schedule tracking
+
+### H1 — Project migration applied
+
+| | |
+|--|--|
+| **Precondition** | `sql_commands/10_PROJECT_DATABASE.sql` run after client hierarchy |
+| **Steps** | In Supabase SQL Editor, inspect `project_records`, `project_schedule_tasks`, `project_field_configs` |
+| **Expected** | Tables exist; OUP, OOH, TNF, OHO_OHB, DEFAULT field configs are seeded |
+
+### H2 — Lead creates project from form fields
+
+| | |
+|--|--|
+| **Precondition** | Logged in as team_lead / group_lead / manager+ |
+| **Steps** | Create project with Title, Client, Sub Division, Page Count, Status, due dates, remarks |
+| **Expected** | `project_records` row saves; `client_fields` stores client-specific values only |
+
+### H3 — Raw Google Sheet paste maps fields
+
+| | |
+|--|--|
+| **Steps** | Paste row with headers `Title`, `Client`, `SUB_DIV`, `Pages`, `Remark` |
+| **Expected** | Form previews normalized fields: title, client, subDivision, pageCount, remarks |
+
+### H4 — Workflow template creates schedule rows
+
+| | |
+|--|--|
+| **Steps** | Choose Preedit workflow |
+| **Expected** | Schedule rows: Prestyle → Cast-off → Preedit → FP Validation → Revises Validation, ordered 1–5 |
+
+### H5 — Assign schedule task to performer
+
+| | |
+|--|--|
+| **Steps** | Lead assigns any performer to FP Validation with Due from Performer and Due Date |
+| **Expected** | `project_schedule_tasks.assigned_to`, date fields, and allocation status update; performer can see assigned task |
+
+---
+
 ## Results log (template)
 
 | Case | Pass/Fail | Tester | Date | Notes |
@@ -237,3 +278,6 @@ npm run build
 | E1 | | | | |
 | E4 | | | | |
 | G1 | | | | |
+| H1 | | | | |
+| H3 | | | | |
+| H5 | | | | |

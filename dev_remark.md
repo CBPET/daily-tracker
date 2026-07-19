@@ -22,6 +22,7 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 7. Run matching `*_VERIFY.sql` scripts after each enterprise migration  
 8. Duplicate audit only: `STATUS_ENTRIES_DUPLICATES_REPORT.sql` — **do not** add a unique index until cleaned  
 9. Onboarding path split: `sql_commands/07_ONBOARDING.sql` (invite vs signup Resend)
+10. Project database phase: `sql_commands/10_PROJECT_DATABASE.sql` after client hierarchy is live
 
 ---
 
@@ -132,3 +133,4 @@ Manual scenarios: [`test_use_case.md`](./test_use_case.md).
 - Mount or remove Leaderboard  
 - Harden invite **resend** email delivery when user already exists (Auth may only regenerate links)  
 - Server-side date-range fetch if entry volume grows beyond full client-side lists
+- Build Project Database UI on top of `project_records` / `project_schedule_tasks` and `projectFieldConfig.js`

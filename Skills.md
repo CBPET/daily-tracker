@@ -25,6 +25,7 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 | S15 | Review Behaviour Intelligence | Leads / managers / admins (flag) |
 | S16 | Manage Feedback | Manager / GM / super_admin (flag) |
 | S17 | Super Admin governance | super_admin (flag) |
+| S18 | Manage Project Database and schedule | Leads / managers / admins |
 
 ---
 
@@ -193,6 +194,20 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 
 ---
 
+## S18 — Manage Project Database and schedule
+
+- **Inputs:** Project basic fields, client-specific fields, raw pasted Google Sheet row, workflow template, stage dates, performer assignment
+- **Outputs:** `project_records`, `project_schedule_tasks`, optional `project_schedule_events`
+- **Rules:**
+  - Project master data is separate from daily `status_entries`
+  - Default workflows: Prestyle -> Cast-off -> Preedit -> FP Validation -> Revises Validation; Normalisation -> Cast-off -> FP Validation -> Revises Validation
+  - Client-specific fields are configurable JSON (`project_field_configs` / `client_fields`)
+  - Leads/managers can create projects and assign any performer to any division/task
+- **Libraries:** `projectFieldConfig.js`
+- **SQL:** `sql_commands/10_PROJECT_DATABASE.sql`
+
+---
+
 ## Role × skill matrix (summary)
 
 | Skill | Performer | Team/Group Lead | Manager | GM / Super Admin |
@@ -208,5 +223,6 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 | S15 Behaviour | — | Y (flag) | Y | Y |
 | S16 Feedback | — | — | Y (flag) | Y |
 | S17 Governance | — | — | — | Super admin (flag) |
+| S18 Project DB / Schedule | — | Y | Y | Y |
 
 \*Division Targets tab available to leads/managers as mounted in Dashboard.

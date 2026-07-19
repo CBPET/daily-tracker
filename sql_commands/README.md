@@ -21,12 +21,13 @@ Run each file once, in order:
 | 7 | `07_ONBOARDING.sql` | `profiles.onboarding` (`invite` / `signup`) for Resend split |
 | 8 | `08_PROFILES_STATUS.sql` | `profiles.status` (`active` / `idle` / `archive`) for User Management |
 | 9 | `09_REQUEST_HUB_RLS_FIX.sql` | Fix `can_view_request_hub_ticket` so creators see INSERT … RETURNING |
+| 10 | `10_PROJECT_DATABASE.sql` | Project master data, configurable client fields, schedule tracking |
 
 Then run:
 
 | Step | File |
 |------|------|
-| 9 | `VERIFY_ALL.sql` |
+| 11 | `VERIFY_ALL.sql` |
 
 ## After SQL
 

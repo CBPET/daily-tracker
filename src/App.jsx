@@ -15,6 +15,7 @@ import ChangePassword from './components/ChangePassword';
 import AdminResetUserPassword from './components/AdminResetUserPassword';
 import AdminUserRow from './components/AdminUserRow';
 import ClientManagement from './components/ClientManagement';
+import ProjectDatabaseManager from './components/ProjectDatabaseManager';
 import SmartRequestHub from './components/requestHub/SmartRequestHub';
 import { NotificationProvider } from './components/notifications/NotificationProvider';
 import NotificationBell from './components/notifications/NotificationBell';
@@ -63,14 +64,15 @@ import {
     KeyRound,
     Inbox,
     Info,
+    Database,
 } from 'lucide-react';
 
 const App = () => {
     // ── Hash Routing Constants ──
-    const HASH_TO_TAB = { form: 'form', analytics: 'dashboard', 'request-hub': 'request_hub', admin: 'super_admin' };
-    const TAB_TO_HASH = { form: 'form', dashboard: 'analytics', request_hub: 'request-hub', super_admin: 'admin' };
+    const HASH_TO_TAB = { form: 'form', analytics: 'dashboard', projects: 'projects', 'request-hub': 'request_hub', admin: 'super_admin' };
+    const TAB_TO_HASH = { form: 'form', dashboard: 'analytics', projects: 'projects', request_hub: 'request-hub', super_admin: 'admin' };
     // App-tab hashes that should resolve to the app view when authenticated
-    const APP_HASHES = new Set(['form', 'analytics', 'request-hub', 'admin']);
+    const APP_HASHES = new Set(['form', 'analytics', 'projects', 'request-hub', 'admin']);
     const requestHubEnabled = isSmartRequestHubEnabled();
     const notificationsEnabled = isNotificationsEnabled();
     const [requestHubTicketId, setRequestHubTicketId] = useState(null);
@@ -150,7 +152,7 @@ const App = () => {
     const [newUserEmail, setNewUserEmail] = useState('');
     const [newUserName, setNewUserName] = useState('');
     const [newUserRole, setNewUserRole] = useState('performer');
-    const [adminSubTab, setAdminSubTab] = useState('users'); // 'users' or 'workflows'
+    const [adminSubTab, setAdminSubTab] = useState('users'); // users, clients, workflows, projects
     
     // ── Password Management State ──
     const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -360,7 +362,7 @@ const App = () => {
             fetchAccessibleProfiles();
             fetchClients();
             fetchDivisionTargets();
-            if (['super_admin', 'general_manager', 'manager'].includes(profile.role)) fetchAllProfiles();
+            if (['super_admin', 'general_manager', 'manager', 'group_lead', 'team_lead', 'performer'].includes(profile.role)) fetchAllProfiles();
         }
     }, [session, profile]);
 
@@ -403,7 +405,7 @@ const App = () => {
     };
 
     const fetchAllProfiles = async () => {
-        if (!['super_admin', 'general_manager', 'manager'].includes(profile?.role)) return;
+        if (!['super_admin', 'general_manager', 'manager', 'group_lead', 'team_lead', 'performer'].includes(profile?.role)) return;
         setIsAdminSyncing(true);
         try {
             const { data, error } = await supabase.from('profiles').select('*').order('performer_name', { ascending: true });
@@ -697,7 +699,6 @@ const App = () => {
     const activeTargetSource = activeTargetOverride ? 'Division Override' : 'Standard Target';
     const activeTargetUnit = TARGET_UNITS[normalizeTaskType(taskType)] || TARGET_UNITS[taskType] || 'items/day';
     const isTitlesTask = activeTargetUnit.startsWith('titles');
-    const titlesMax = isTitlesTask ? Math.max(Number(activeTargetVal) || 4, 8) : 0;
     const completedWorkMeta = (() => {
         if (!taskType) {
             return { label: 'Completed Work', placeholder: '150', unitWord: 'item' };
@@ -733,6 +734,13 @@ const App = () => {
         prevTaskUnitRef.current = taskType ? activeTargetUnit : '';
     }, [taskType, activeTargetUnit, isTitlesTask]);
 
+    // Cast-off: always 1 title per entry (hidden); drives 2h estimate
+    useEffect(() => {
+        if (isTitlesTask && completedPages !== '1') {
+            setCompletedPages('1');
+        }
+    }, [isTitlesTask, completedPages]);
+
     useEffect(() => {
         if (!taskType) {
             setEstimatedTime('');
@@ -742,22 +750,24 @@ const App = () => {
             setEstimatedTime('');
             return;
         }
-        // Titles tasks (Cast-off): never estimate from page-sized counts
         if (isTitlesTask) {
-            const titles = Number(completedPages);
-            if (!Number.isFinite(titles) || titles <= 0 || titles > titlesMax) {
-                setEstimatedTime('');
-                return;
-            }
+            const autoEstimatedHours = calcEstimatedHours(taskType, 1, activeTargetVal);
+            setEstimatedTime(autoEstimatedHours > 0 ? autoEstimatedHours.toFixed(2) : '');
+            return;
         }
         const autoEstimatedHours = calcEstimatedHours(taskType, completedPages, activeTargetVal);
         setEstimatedTime(autoEstimatedHours > 0 ? autoEstimatedHours.toFixed(2) : '');
-    }, [taskType, completedPages, activeTargetVal, isMiscellaneous, isTitlesTask, titlesMax]);
+    }, [taskType, completedPages, activeTargetVal, isMiscellaneous, isTitlesTask]);
 
     // ── Handlers ──
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!performerName || !titleName || !completedPages || !taskType || !estimatedTime || !takenTime || !entryDate) {
+        const workUnits = isTitlesTask ? 1 : Number(completedPages);
+        if (!performerName || !titleName || !taskType || !estimatedTime || !takenTime || !entryDate) {
+            setShowErrorModal(true);
+            return;
+        }
+        if (!isTitlesTask && !completedPages) {
             setShowErrorModal(true);
             return;
         }
@@ -765,14 +775,6 @@ const App = () => {
             setToastMessage('❌ Batch Number is required when Batch flow is enabled');
             setShowToast(true);
             return;
-        }
-        if (isTitlesTask) {
-            const titles = Number(completedPages);
-            if (!Number.isFinite(titles) || titles <= 0 || titles > titlesMax) {
-                setToastMessage(`❌ Cast-off uses titles only (1–${titlesMax}). Enter title count, not pages.`);
-                setShowToast(true);
-                return;
-            }
         }
         if (isEntryDuplicateGuardEnabled()) {
             const dup = statusEntries.find(
@@ -798,15 +800,18 @@ const App = () => {
             setShowToast(true);
             return;
         }
+        const titlesTargetPct = isTitlesTask && activeTargetVal > 0 && takenTime > 0
+            ? ((1 / ((activeTargetVal / STANDARD_WORK_HOURS_PER_DAY) * takenTime)) * 100).toFixed(2)
+            : targetAchievedPercentage;
         const achievementStatus = isMiscellaneous
             ? 'N/A'
-            : (Number(targetAchievedPercentage) >= 100 ? 'Achieved' : MOTIVATIONAL_MESSAGE);
+            : (Number(titlesTargetPct) >= 100 ? 'Achieved' : MOTIVATIONAL_MESSAGE);
         const newEntry = {
             id: Date.now(), date: entryDate, performerName: performerName.trim(),
-            titleName: titleName.trim(), completedPages: Number(completedPages), taskType,
+            titleName: titleName.trim(), completedPages: workUnits, taskType,
             estimatedTime: Number(estimatedTime), takenTime: Number(takenTime),
             timeAchieved: timeAchievedPercentage,
-            targetAchieved: isMiscellaneous ? 0 : targetAchievedPercentage,
+            targetAchieved: isMiscellaneous ? 0 : titlesTargetPct,
             status: achievementStatus,
             client_id: selectedClient || 'DEFAULT_CLIENT',
             sub_division: selectedSubDivision || null,
@@ -1026,6 +1031,9 @@ const App = () => {
                         <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                             <LayoutDashboard size={18} />Analytics
                         </button>
+                        <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                            <Database size={18} />Projects
+                        </button>
                         {requestHubEnabled && (
                             <button onClick={() => setActiveTab('request_hub')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'request_hub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                                 <Inbox size={18} />Smart Request Hub
@@ -1051,6 +1059,14 @@ const App = () => {
                             accessibleProfiles={accessibleProfiles}
                             analyticsDeepLink={analyticsDeepLink}
                             onDeepLinkConsumed={() => setAnalyticsDeepLink(null)}
+                        />
+                    ) : activeTab === 'projects' ? (
+                        <ProjectDatabaseManager
+                            supabase={supabase}
+                            session={session}
+                            profile={profile}
+                            allProfiles={allProfiles}
+                            clients={clients}
                         />
                     ) : activeTab === 'request_hub' && requestHubEnabled ? (
                         <SmartRequestHub
@@ -1132,6 +1148,15 @@ const App = () => {
                                         }`}
                                 >
                                     📋 Workflow Management
+                                </button>
+                                <button
+                                    onClick={() => setAdminSubTab('projects')}
+                                    className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${adminSubTab === 'projects'
+                                        ? 'border-purple-600 text-purple-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                        }`}
+                                >
+                                    Project Database
                                 </button>
                             </div>
 
@@ -1217,6 +1242,14 @@ const App = () => {
                                     profile={profile}
                                     allProfiles={allProfiles}
                                     onRefresh={fetchAllProfiles}
+                                />
+                            ) : adminSubTab === 'projects' ? (
+                                <ProjectDatabaseManager
+                                    supabase={supabase}
+                                    session={session}
+                                    profile={profile}
+                                    allProfiles={allProfiles}
+                                    clients={clients}
                                 />
                             ) : null}
 
@@ -1500,10 +1533,33 @@ const App = () => {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Project/Title Name</label>
-                                        <input type="text" value={titleName} onChange={e => setTitleName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="e.g., Springer Nature Vol 42" required />
-                                    </div>
+                                    {isTitlesTask ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Project/Title Name</label>
+                                                <input type="text" value={titleName} onChange={e => setTitleName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="e.g., Springer Nature Vol 42" required />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Pages</label>
+                                                <input
+                                                    type="number"
+                                                    value={castOffPages}
+                                                    onChange={(e) => setCastOffPages(e.target.value)}
+                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                                                    placeholder="Optional"
+                                                    min={0}
+                                                />
+                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                                                    Reference only — not used in estimate
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Project/Title Name</label>
+                                            <input type="text" value={titleName} onChange={e => setTitleName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="e.g., Springer Nature Vol 42" required />
+                                        </div>
+                                    )}
 
                                     <div>
                                         <label className="inline-flex items-center gap-2 cursor-pointer select-none mb-2 ml-1">
@@ -1539,7 +1595,7 @@ const App = () => {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className={`grid grid-cols-1 gap-6 ${isTitlesTask ? '' : 'md:grid-cols-2'}`}>
                                         <div>
                                             <div className="flex items-center justify-between gap-3 mb-2 ml-1">
                                                 <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Task Type</label>
@@ -1558,47 +1614,24 @@ const App = () => {
                                             {taskType && !isMiscellaneous ? (
                                                 <p className="text-[10px] text-gray-400 mt-1 ml-1">
                                                     Target: {activeTargetVal} {activeTargetUnit} · Source: {activeTargetSource}
+                                                    {isTitlesTask ? ' · 1 title per entry' : ''}
                                                 </p>
                                             ) : null}
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">{completedWorkMeta.label}</label>
-                                            <input
-                                                type="number"
-                                                value={completedPages}
-                                                onChange={e => setCompletedPages(e.target.value)}
-                                                className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                placeholder={completedWorkMeta.placeholder}
-                                                min={isTitlesTask ? 1 : undefined}
-                                                max={isTitlesTask ? titlesMax : undefined}
-                                                step={isTitlesTask ? 1 : undefined}
-                                                required
-                                            />
-                                            {isTitlesTask ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                    Used for estimate · Max {titlesMax}
-                                                    {hoursPerUnit > 0 ? ` · 1 title ≈ ${hoursPerUnit.toFixed(2)}h` : ''}
-                                                </p>
-                                            ) : null}
-                                        </div>
+                                        {!isTitlesTask ? (
+                                            <div>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">{completedWorkMeta.label}</label>
+                                                <input
+                                                    type="number"
+                                                    value={completedPages}
+                                                    onChange={e => setCompletedPages(e.target.value)}
+                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                                                    placeholder={completedWorkMeta.placeholder}
+                                                    required
+                                                />
+                                            </div>
+                                        ) : null}
                                     </div>
-
-                                    {isTitlesTask ? (
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Pages</label>
-                                            <input
-                                                type="number"
-                                                value={castOffPages}
-                                                onChange={(e) => setCastOffPages(e.target.value)}
-                                                className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                placeholder="Optional — not used in estimate"
-                                                min={0}
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                Reference only — does not affect Estimated Hours or scores
-                                            </p>
-                                        </div>
-                                    ) : null}
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
@@ -1617,6 +1650,10 @@ const App = () => {
                                             />
                                             {isMiscellaneous ? (
                                                 <p className="text-[10px] text-gray-400 mt-1 ml-1">Miscellaneous only: {MIN_HOURS}–{MAX_HOURS} hours</p>
+                                            ) : isTitlesTask && hoursPerUnit > 0 ? (
+                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                                                    1 title per entry ≈ {hoursPerUnit.toFixed(2)}h · add another entry for more titles
+                                                </p>
                                             ) : hoursPerUnit > 0 ? (
                                                 <p className="text-[10px] text-gray-400 mt-1 ml-1">
                                                     1 {completedWorkMeta.unitWord} ≈ {hoursPerUnit.toFixed(2)}h
