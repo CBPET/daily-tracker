@@ -257,6 +257,7 @@ Run the SQL files in order for a fresh Supabase project:
 | [`09_REQUEST_HUB_RLS_FIX.sql`](sql_commands/09_REQUEST_HUB_RLS_FIX.sql) | Request Hub creator visibility fix |
 | [`10_PROJECT_DATABASE.sql`](sql_commands/10_PROJECT_DATABASE.sql) | Project master data, configurable client fields, schedule tracking |
 | [`11_PROJECT_SCHEDULE_DATE_ACL.sql`](sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql) | Lead-only schedule date ACL and structured audit reasons |
+| [`12_PROJECT_RECORD_STATUS.sql`](sql_commands/12_PROJECT_RECORD_STATUS.sql) | iTitle Form Entry project status values |
 | [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql) | Post-setup verification checks |
 
 See [`sql_commands/README.md`](sql_commands/README.md) for the database setup sequence.

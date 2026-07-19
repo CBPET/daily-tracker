@@ -1026,13 +1026,13 @@ const App = () => {
                 <div className="container mx-auto max-w-7xl mb-8 flex justify-center">
                     <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 flex gap-2 overflow-x-auto">
                         <button onClick={() => setActiveTab('form')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'form' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                            <ClipboardList size={18} />Entry Form
+                            <ClipboardList size={18} />Daily Task Form
                         </button>
                         <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                             <LayoutDashboard size={18} />Analytics
                         </button>
                         <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                            <Database size={18} />Projects
+                            <Database size={18} />iTitle
                         </button>
                         {requestHubEnabled && (
                             <button onClick={() => setActiveTab('request_hub')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'request_hub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
@@ -1156,7 +1156,7 @@ const App = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                                         }`}
                                 >
-                                    Project Database
+                                    iTitle Database
                                 </button>
                             </div>
 

@@ -4,11 +4,14 @@ import PreviewTable from './PreviewTable';
 
 export default function ProjectPasteIntake({
     pasteText,
+    pasteClientCode,
+    clients = [],
     workflowKey,
     workflowOptions,
     previewRows,
     saving,
     onPasteChange,
+    onPasteClientChange,
     onWorkflowChange,
     onParse,
     onToggleRow,
@@ -23,21 +26,36 @@ export default function ProjectPasteIntake({
                         value={pasteText}
                         onChange={(event) => onPasteChange(event.target.value)}
                         rows={6}
-                        placeholder="Title\tClient\tSUB_DIV\tPages"
+                        placeholder={"OUP: iTitle / MSS Count / Login / Job Level / Client/Div …\nTNF/OOH: Title / Client (SUB_DIV) / Login Date / Page Count / Complexity Level …"}
                         className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Workflow</label>
-                    <select
-                        value={workflowKey}
-                        onChange={(event) => onWorkflowChange(event.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-                    >
-                        {workflowOptions.map(([key, template]) => (
-                            <option key={key} value={key}>{template.label || key}</option>
-                        ))}
-                    </select>
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Client *</label>
+                        <select
+                            value={pasteClientCode || ''}
+                            onChange={(event) => onPasteClientChange(event.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">Select client</option>
+                            {clients.map((client) => (
+                                <option key={client.id || client.code} value={client.code}>{client.code}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Workflow</label>
+                        <select
+                            value={workflowKey}
+                            onChange={(event) => onWorkflowChange(event.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            {workflowOptions.map(([key, template]) => (
+                                <option key={key} value={key}>{template.label || key}</option>
+                            ))}
+                        </select>
+                    </div>
                     <button onClick={onParse} className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest">
                         <ClipboardPaste size={16} /> Preview
                     </button>

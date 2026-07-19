@@ -1,5 +1,6 @@
-import React from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { splitFormEntryFields } from '../../lib/projects/projectFieldConfig';
 import ProjectField from './ProjectField';
 
 export default function ProjectManualForm({
@@ -13,10 +14,16 @@ export default function ProjectManualForm({
     onWorkflowChange,
     onSave,
 }) {
+    const [showOptional, setShowOptional] = useState(false);
+    const { mainFields, optionalFields } = useMemo(
+        () => splitFormEntryFields(visibleFields),
+        [visibleFields]
+    );
+
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {visibleFields.map((field) => (
+                {mainFields.map((field) => (
                     <ProjectField
                         key={field.key}
                         field={field}
@@ -38,6 +45,33 @@ export default function ProjectManualForm({
                     </select>
                 </div>
             </div>
+
+            {optionalFields.length ? (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setShowOptional((open) => !open)}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/50"
+                    >
+                        {showOptional ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        Optional Details
+                    </button>
+                    {showOptional ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                            {optionalFields.map((field) => (
+                                <ProjectField
+                                    key={field.key}
+                                    field={field}
+                                    value={formValues[field.key]}
+                                    clients={clients}
+                                    onChange={onFieldChange}
+                                />
+                            ))}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
+
             <button
                 onClick={onSave}
                 disabled={saving}

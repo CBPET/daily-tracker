@@ -37,7 +37,7 @@ import ProjectScheduleDashboard from './ProjectScheduleDashboard';
 const emptyFormValues = (clientCode = '') => ({
     title: '',
     client: clientCode,
-    status: 'new',
+    status: 'yet_to_plan',
 });
 
 export default function ProjectsShell({
@@ -50,7 +50,8 @@ export default function ProjectsShell({
     const canManage = canManageProjectDatabase(profile);
     const canEditConfig = canEditProjectFieldConfig(profile);
     const defaultClientCode = clients[0]?.code || profile?.client_id || 'OUP';
-    const [mode, setMode] = useState(canManage ? 'manual' : 'dashboard');
+    const [primaryMode, setPrimaryMode] = useState('dashboard');
+    const [addSubMode, setAddSubMode] = useState('manual');
     const [fieldConfigs, setFieldConfigs] = useState(fallbackConfigRows());
     const [projects, setProjects] = useState([]);
     const [scheduleTasks, setScheduleTasks] = useState([]);
@@ -60,6 +61,7 @@ export default function ProjectsShell({
     const [formValues, setFormValues] = useState(() => emptyFormValues(defaultClientCode));
     const [workflowKey, setWorkflowKey] = useState('preedit');
     const [pasteText, setPasteText] = useState('');
+    const [pasteClientCode, setPasteClientCode] = useState(defaultClientCode);
     const [previewRows, setPreviewRows] = useState([]);
     const [selectedConfigCode, setSelectedConfigCode] = useState('DEFAULT');
     const [configDraft, setConfigDraft] = useState('');
@@ -167,7 +169,6 @@ export default function ProjectsShell({
             session.user.id,
             rawSource
         );
-        if (payload.status === 'new') payload.status = 'scheduled';
 
         const { data, error } = await supabase
             .from('project_records')
@@ -196,7 +197,11 @@ export default function ProjectsShell({
     };
 
     const handleParsePaste = () => {
-        const rows = parsePastedProjectRows(pasteText, fieldConfigs);
+        if (!pasteClientCode) {
+            setMessage('Select a Client before parsing pasted rows.');
+            return;
+        }
+        const rows = parsePastedProjectRows(pasteText, fieldConfigs, pasteClientCode);
         setPreviewRows(rows);
         setMessage(rows.length ? `${rows.length} pasted row(s) ready for review.` : 'Paste must include a header row and at least one data row.');
     };
@@ -325,8 +330,8 @@ export default function ProjectsShell({
         'DEFAULT',
     ])).sort();
 
-    const tabClass = (key) => `px-4 py-3 text-xs font-black uppercase tracking-widest border-b-2 ${
-        mode === key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'
+    const tabClass = (key, activeKey) => `px-4 py-3 text-xs font-black uppercase tracking-widest border-b-2 ${
+        activeKey === key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'
     }`;
 
     return (
@@ -335,7 +340,7 @@ export default function ProjectsShell({
                 <div>
                     <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                         <Database className="text-indigo-600" />
-                        Project Database
+                        iTitle Database
                     </h2>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-1">
                         Project master data, configurable fields, workflow schedules
@@ -357,33 +362,39 @@ export default function ProjectsShell({
             ) : null}
 
             <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-800">
-                {canManage ? (
-                    <>
-                        <button type="button" onClick={() => setMode('paste')} className={tabClass('paste')}>
-                            Paste Preview
-                        </button>
-                        <button type="button" onClick={() => setMode('manual')} className={tabClass('manual')}>
-                            Manual Entry
-                        </button>
-                        <button type="button" onClick={() => setMode('pubkit')} className={tabClass('pubkit')}>
-                            PubKit Import
-                        </button>
-                    </>
-                ) : null}
-                <button type="button" onClick={() => setMode('dashboard')} className={tabClass('dashboard')}>
+                <button type="button" onClick={() => setPrimaryMode('dashboard')} className={tabClass('dashboard', primaryMode)}>
                     <span className="inline-flex items-center gap-1"><LayoutDashboard size={14} /> Dashboard</span>
                 </button>
-                <button type="button" onClick={() => setMode('assigned')} className={tabClass('assigned')}>
+                <button type="button" onClick={() => setPrimaryMode('assigned')} className={tabClass('assigned', primaryMode)}>
                     Project Tracker
                 </button>
-                {canEditConfig ? (
-                    <button type="button" onClick={() => setMode('config')} className={tabClass('config')}>
+                {canManage ? (
+                    <button type="button" onClick={() => setPrimaryMode('config')} className={tabClass('config', primaryMode)}>
                         Field Config
+                    </button>
+                ) : null}
+                {canManage ? (
+                    <button type="button" onClick={() => setPrimaryMode('add')} className={tabClass('add', primaryMode)}>
+                        Add New Project
                     </button>
                 ) : null}
             </div>
 
-            {mode === 'manual' && canManage ? (
+            {primaryMode === 'add' && canManage ? (
+                <div className="flex flex-wrap gap-2 border-b border-gray-100 dark:border-gray-800">
+                    <button type="button" onClick={() => setAddSubMode('manual')} className={tabClass('manual', addSubMode)}>
+                        Form Entry
+                    </button>
+                    <button type="button" onClick={() => setAddSubMode('paste')} className={tabClass('paste', addSubMode)}>
+                        Paste Preview
+                    </button>
+                    <button type="button" onClick={() => setAddSubMode('pubkit')} className={tabClass('pubkit', addSubMode)}>
+                        PubKit Import
+                    </button>
+                </div>
+            ) : null}
+
+            {primaryMode === 'add' && addSubMode === 'manual' && canManage ? (
                 <ProjectManualForm
                     visibleFields={visibleFields}
                     formValues={formValues}
@@ -397,14 +408,17 @@ export default function ProjectsShell({
                 />
             ) : null}
 
-            {mode === 'paste' && canManage ? (
+            {primaryMode === 'add' && addSubMode === 'paste' && canManage ? (
                 <ProjectPasteIntake
                     pasteText={pasteText}
+                    pasteClientCode={pasteClientCode}
+                    clients={clients}
                     workflowKey={workflowKey}
                     workflowOptions={workflowOptions}
                     previewRows={previewRows}
                     saving={saving}
                     onPasteChange={setPasteText}
+                    onPasteClientChange={setPasteClientCode}
                     onWorkflowChange={setWorkflowKey}
                     onParse={handleParsePaste}
                     onToggleRow={togglePreviewRow}
@@ -412,7 +426,7 @@ export default function ProjectsShell({
                 />
             ) : null}
 
-            {mode === 'pubkit' && canManage ? (
+            {primaryMode === 'add' && addSubMode === 'pubkit' && canManage ? (
                 <ProjectPubKitImport
                     pubKitQuery={pubKitQuery}
                     saving={saving}
@@ -421,19 +435,20 @@ export default function ProjectsShell({
                 />
             ) : null}
 
-            {mode === 'config' && canEditConfig ? (
+            {primaryMode === 'config' && canManage ? (
                 <ProjectFieldConfigEditor
                     selectedConfigCode={selectedConfigCode}
                     configCodes={configCodes}
                     configDraft={configDraft}
                     saving={saving}
+                    readOnly={!canEditConfig}
                     onCodeChange={setSelectedConfigCode}
                     onDraftChange={setConfigDraft}
                     onSave={handleSaveConfig}
                 />
             ) : null}
 
-            {mode === 'dashboard' ? (
+            {primaryMode === 'dashboard' ? (
                 <ProjectScheduleDashboard
                     supabase={supabase}
                     profile={profile}
@@ -443,7 +458,7 @@ export default function ProjectsShell({
                 />
             ) : null}
 
-            {mode === 'assigned' ? (
+            {primaryMode === 'assigned' ? (
                 <ProjectTracker
                     loading={loading}
                     projects={canManage ? projects : scopedProjects}

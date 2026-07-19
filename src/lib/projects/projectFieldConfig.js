@@ -1,29 +1,76 @@
 export const PROJECT_STATUS_OPTIONS = [
-    'new',
-    'scheduled',
-    'in_progress',
-    'on_hold',
-    'completed',
-    'delivered',
-    'cancelled',
+    { value: 'yet_to_plan', label: 'Yet to Plan' },
+    { value: 'allocated', label: 'Allocated' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'on_hold', label: 'On hold' },
+    { value: 'qc', label: 'QC' },
+    { value: 'wip', label: 'WIP' },
+    { value: 'query', label: 'Query' },
+];
+
+export const PROJECT_COMPLEXITY_OPTIONS = ['Simple', 'Medium', 'Complex'];
+
+export const PROJECT_DEFAULT_STATUS = 'yet_to_plan';
+
+/** Collapsible Optional Details on Form Entry */
+export const FORM_OPTIONAL_FIELD_KEYS = [
+    'textWordCount',
+    'referenceCount',
+    'referenceCountNotes',
+    'refWordCount',
+    'referenceStyle',
+];
+
+/** Kept in config for paste/DB but omitted from Form Entry UI */
+export const FORM_HIDDEN_FIELD_KEYS = [
+    'revisedLoginDate',
+    'queries',
+    'remarks',
+];
+
+export const FORM_MAIN_FIELD_ORDER = [
+    'title',
+    'client',
+    'subDivision',
+    'pageCount',
+    'complexityLevel',
+    'status',
+    'loginDate',
+    'dueDate',
+    'revisedDueDate',
 ];
 
 export const PROJECT_MANAGER_ROLES = ['super_admin', 'general_manager', 'manager', 'group_lead', 'team_lead'];
 
 export const DEFAULT_PROJECT_CONFIG = {
     coreFields: [
-        { key: 'title', label: 'Title', type: 'text', required: true, aliases: ['title', 'book title', 'job title'] },
+        { key: 'title', label: 'Title', type: 'text', required: true, aliases: ['title', 'book title', 'job title', 'ititle'] },
         { key: 'client', label: 'Client', type: 'client', required: true, aliases: ['client', 'customer'] },
-        { key: 'subDivision', label: 'Sub Division', type: 'text', aliases: ['sub division', 'sub_div', 'subdivision'] },
-        { key: 'pageCount', label: 'Page Count', type: 'number', min: 0, aliases: ['page count', 'pages', 'extent'] },
-        { key: 'complexityLevel', label: 'Complexity Level', type: 'text', aliases: ['complexity level', 'complexity'] },
-        { key: 'status', label: 'Status', type: 'select', options: PROJECT_STATUS_OPTIONS, defaultValue: 'new', aliases: ['status'] },
+        { key: 'subDivision', label: 'SUB_DIV', type: 'text', required: true, aliases: ['sub division', 'sub_div', 'subdivision', 'client/div', 'client / div'] },
+        { key: 'pageCount', label: 'Page Count', type: 'number', min: 0, required: true, aliases: ['page count', 'pages', 'extent', 'mss count', 'mss'] },
+        {
+            key: 'complexityLevel',
+            label: 'Complexity Level',
+            type: 'select',
+            required: true,
+            options: PROJECT_COMPLEXITY_OPTIONS,
+            aliases: ['complexity level', 'complexity', 'job level'],
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            type: 'select',
+            options: PROJECT_STATUS_OPTIONS,
+            defaultValue: PROJECT_DEFAULT_STATUS,
+            required: true,
+            aliases: ['status'],
+        },
         { key: 'textWordCount', label: 'Text Word Count', type: 'number', min: 0, aliases: ['text word count', 'text words'] },
         { key: 'referenceCount', label: 'Reference Count', type: 'number', min: 0, aliases: ['reference count', 'references'] },
         { key: 'referenceCountNotes', label: 'Reference count in notes', type: 'number', min: 0, aliases: ['reference count in notes', 'reference count notes', 'refs in notes'] },
         { key: 'refWordCount', label: 'Ref Word Count', type: 'number', min: 0, aliases: ['ref word count', 'reference word count'] },
         { key: 'referenceStyle', label: 'Reference style', type: 'text', aliases: ['reference style', 'ref style'] },
-        { key: 'loginDate', label: 'Login Date', type: 'date', aliases: ['login date', 'received date'] },
+        { key: 'loginDate', label: 'Login Date', type: 'date', required: true, aliases: ['login date', 'received date', 'login'] },
         { key: 'revisedLoginDate', label: 'Revised Login Date', type: 'date', aliases: ['revised login date'] },
         { key: 'dueDate', label: 'Due Date', type: 'date', aliases: ['due date'] },
         { key: 'revisedDueDate', label: 'Revised Due Date', type: 'date', aliases: ['revised due date'] },
@@ -71,8 +118,8 @@ export const CLIENT_PROJECT_FIELD_CONFIG = {
         config: {
             fields: [
                 { key: 'jobRequired', label: 'Job Required', type: 'select', aliases: ['job required', 'job type'], options: ['MUFO', 'Typecode-Only', 'TS', 'Reconvert', 'Prestyle', 'Preedit', 'MS Prep'] },
-                { key: 'xmlProduct', label: 'XML Product', type: 'select', aliases: ['xml product'], options: ['Product', 'Nonproduct'] },
-                { key: 'subDivision', label: 'SUB_DIV', type: 'select', aliases: ['sub_div', 'sub division'], options: ['Acad Oss', 'Acad US', 'Acad Ind', 'Acad UK'] },
+                { key: 'xmlProduct', label: 'XML Product', type: 'select', aliases: ['xml product', 'xml product (product/nonproduct)'], options: ['Product', 'Nonproduct'] },
+                { key: 'subDivision', label: 'SUB_DIV', type: 'select', aliases: ['sub_div', 'sub division', 'client/div', 'client / div'], options: ['Acad Oss', 'Acad US', 'Acad Ind', 'Acad UK', 'Law UK', 'Law UK HE', 'Law US', 'Law US HE', 'Med UK', 'MED UK HB', 'Med US', 'MED HB', 'LOOU'] },
             ],
         },
     },
@@ -84,7 +131,7 @@ export const CLIENT_PROJECT_FIELD_CONFIG = {
                     key: 'subDivision',
                     label: 'SUB_DIV',
                     type: 'select',
-                    aliases: ['sub_div', 'sub division'],
+                    aliases: ['sub_div', 'sub division', 'client'],
                     options: [
                         'Bloomsbury UK', 'Bloomsbury US', 'JHUP', 'NNA', 'LLP', 'OOH', 'OOH_AGE_PUB', 'OOH_ARC',
                         'OOH_ARM', 'OOH_BritAcad', 'OOH_BUP', 'OOH_CP', 'OOH_GS', 'OOH_IBT', 'OOH_IBT-Flexi',
@@ -100,8 +147,8 @@ export const CLIENT_PROJECT_FIELD_CONFIG = {
         displayName: 'TNF',
         config: {
             fields: [
-                { key: 'model', label: 'Model', type: 'select', aliases: ['model'], options: ['Onshore', 'Offshore', 'Hybrid'] },
-                { key: 'subDivision', label: 'SUB_DIV', type: 'select', aliases: ['sub_div', 'sub division'], options: ['TNF_FSM', 'OOH_TNF'] },
+                { key: 'model', label: 'Model', type: 'select', aliases: ['model', 'onshore/offshore', 'onshore / offshore'], options: ['Onshore', 'Offshore', 'Hybrid'] },
+                { key: 'subDivision', label: 'SUB_DIV', type: 'select', aliases: ['sub_div', 'sub division', 'client'], options: ['TNF_FSM', 'OOH_TNF'] },
             ],
         },
     },
@@ -144,6 +191,65 @@ export function normalizeHeader(header) {
 
 export function normalizeClientCode(clientCode) {
     return String(clientCode || 'DEFAULT').trim().toUpperCase().replace(/[&/ ]+/g, '_');
+}
+
+const MONTH_INDEX = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/** Normalize sheet/ISO dates to YYYY-MM-DD (e.g. 14 Jul 26, 14 Jul 2026). */
+export function normalizeProjectDate(value) {
+    if (value == null) return value;
+    const raw = String(value).trim();
+    if (!raw) return '';
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+    const match = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{2}|\d{4})$/);
+    if (match) {
+        const day = Number(match[1]);
+        const monthKey = match[2].slice(0, 3).toLowerCase();
+        const month = MONTH_INDEX[monthKey];
+        let year = Number(match[3]);
+        if (Number.isNaN(day) || month == null || Number.isNaN(year)) return raw;
+        if (year < 100) year += 2000;
+        const iso = `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const check = new Date(Date.UTC(year, month, day));
+        if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month || check.getUTCDate() !== day) return raw;
+        return iso;
+    }
+
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+        return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    }
+    return raw;
+}
+
+/** Force known core field types so stale DB JSON cannot turn selects into text inputs. */
+export function normalizeFieldDef(field = {}) {
+    if (!field?.key) return field;
+    if (field.key === 'complexityLevel') {
+        return {
+            ...field,
+            type: 'select',
+            required: true,
+            options: PROJECT_COMPLEXITY_OPTIONS,
+            aliases: Array.from(new Set([...(field.aliases || []), 'complexity level', 'complexity', 'job level'])),
+        };
+    }
+    if (field.key === 'status') {
+        return {
+            ...field,
+            type: 'select',
+            required: true,
+            defaultValue: field.defaultValue || PROJECT_DEFAULT_STATUS,
+            options: PROJECT_STATUS_OPTIONS,
+            aliases: Array.from(new Set([...(field.aliases || []), 'status'])),
+        };
+    }
+    return field;
 }
 
 function asArrayFields(fields) {
@@ -196,9 +302,56 @@ export function getVisibleProjectFields(configRows = [], clientCode = 'DEFAULT')
     const byKey = new Map();
     [...config.coreFields, ...config.fields].forEach((field) => {
         if (!field?.key) return;
-        byKey.set(field.key, field);
+        const prev = byKey.get(field.key);
+        byKey.set(field.key, normalizeFieldDef(prev ? { ...prev, ...field } : field));
     });
-    return Array.from(byKey.values());
+    return Array.from(byKey.values()).map(normalizeFieldDef);
+}
+
+/** Build header→field map; for OOH/TNF sheet "Client" means SUB_DIV. */
+export function getPasteAliasMap(fields = [], pasteClientCode = 'DEFAULT') {
+    const code = normalizeClientCode(pasteClientCode);
+    const treatClientAsSubDiv = code === 'OOH' || code === 'TNF';
+    const aliasMap = getAliasMap(fields);
+    if (treatClientAsSubDiv) {
+        aliasMap.client = 'subDivision';
+        aliasMap.customer = 'subDivision';
+    }
+    return aliasMap;
+}
+
+/** Split visible fields for Form Entry: main grid vs Optional Details (hides paste-only fields). */
+export function splitFormEntryFields(fields = []) {
+    const optionalKeys = new Set(FORM_OPTIONAL_FIELD_KEYS);
+    const hiddenKeys = new Set(FORM_HIDDEN_FIELD_KEYS);
+    const orderIndex = new Map(FORM_MAIN_FIELD_ORDER.map((key, index) => [key, index]));
+
+    const optional = [];
+    const main = [];
+
+    fields.forEach((field) => {
+        if (!field?.key || hiddenKeys.has(field.key)) return;
+        if (optionalKeys.has(field.key)) {
+            optional.push(field);
+            return;
+        }
+        main.push(field);
+    });
+
+    main.sort((a, b) => {
+        const ai = orderIndex.has(a.key) ? orderIndex.get(a.key) : 1000;
+        const bi = orderIndex.has(b.key) ? orderIndex.get(b.key) : 1000;
+        if (ai !== bi) return ai - bi;
+        return String(a.label || a.key).localeCompare(String(b.label || b.key));
+    });
+
+    optional.sort((a, b) => {
+        const ai = FORM_OPTIONAL_FIELD_KEYS.indexOf(a.key);
+        const bi = FORM_OPTIONAL_FIELD_KEYS.indexOf(b.key);
+        return ai - bi;
+    });
+
+    return { mainFields: main, optionalFields: optional };
 }
 
 export function getAliasMap(fields = []) {
@@ -212,35 +365,61 @@ export function getAliasMap(fields = []) {
 }
 
 export function mapRawProjectRow(row, configRows = [], initialClient = 'DEFAULT') {
-    const baseFields = getVisibleProjectFields(configRows, initialClient);
-    const baseAliasMap = getAliasMap(baseFields);
+    const pasteClient = normalizeClientCode(initialClient) === 'DEFAULT' ? 'DEFAULT' : normalizeClientCode(initialClient);
+    const fields = getVisibleProjectFields(configRows, pasteClient === 'DEFAULT' ? 'DEFAULT' : pasteClient);
+    const aliasMap = getPasteAliasMap(fields, pasteClient);
+    const fieldByKey = new Map(fields.map((field) => [field.key, field]));
+
     const normalizedInput = Object.entries(row || {}).reduce((acc, [key, value]) => {
         acc[normalizeHeader(key)] = value;
         return acc;
     }, {});
 
-    const firstPass = Object.entries(normalizedInput).reduce((acc, [header, value]) => {
-        const fieldKey = baseAliasMap[header];
-        if (fieldKey) acc[fieldKey] = value;
+    const mapped = Object.entries(normalizedInput).reduce((acc, [header, value]) => {
+        const fieldKey = aliasMap[header];
+        if (!fieldKey) return acc;
+        const field = fieldByKey.get(fieldKey);
+        if (field?.type === 'date') {
+            acc[fieldKey] = normalizeProjectDate(value);
+        } else if (fieldKey === 'status') {
+            acc[fieldKey] = normalizeStatusValue(value);
+        } else {
+            acc[fieldKey] = value;
+        }
         return acc;
     }, {});
 
-    const clientCode = firstPass.client || initialClient;
-    const clientAliasMap = getAliasMap(getVisibleProjectFields(configRows, clientCode));
-    return Object.entries(normalizedInput).reduce((acc, [header, value]) => {
-        const fieldKey = clientAliasMap[header];
-        if (fieldKey) acc[fieldKey] = value;
-        return acc;
-    }, firstPass);
+    if (pasteClient && pasteClient !== 'DEFAULT') {
+        mapped.client = pasteClient;
+    } else if (!mapped.client && initialClient && normalizeClientCode(initialClient) !== 'DEFAULT') {
+        mapped.client = normalizeClientCode(initialClient);
+    }
+
+    if (!mapped.status) mapped.status = PROJECT_DEFAULT_STATUS;
+
+    return mapped;
 }
 
-export function parsePastedProjectRows(rawText, configRows = []) {
+function normalizeStatusValue(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return PROJECT_DEFAULT_STATUS;
+    const lowered = raw.toLowerCase().replace(/\s+/g, '_');
+    const found = PROJECT_STATUS_OPTIONS.find((option) => (
+        option.value === raw
+        || option.value === lowered
+        || String(option.label).toLowerCase() === raw.toLowerCase()
+    ));
+    return found?.value || raw;
+}
+
+export function parsePastedProjectRows(rawText, configRows = [], pasteClientCode = 'DEFAULT') {
     const rows = String(rawText || '')
         .split(/\r?\n/)
         .map((line) => line.trimEnd())
         .filter((line) => line.trim().length > 0);
     if (rows.length < 2) return [];
 
+    const clientCode = normalizeClientCode(pasteClientCode);
     const delimiter = rows[0].includes('\t') ? '\t' : ',';
     const headers = rows[0].split(delimiter).map((header) => header.trim());
     return rows.slice(1).map((line, index) => {
@@ -249,14 +428,15 @@ export function parsePastedProjectRows(rawText, configRows = []) {
             acc[header] = cells[cellIndex] || '';
             return acc;
         }, {});
-        const values = mapRawProjectRow(rawRow, configRows);
+        const values = mapRawProjectRow(rawRow, configRows, clientCode);
+        if (clientCode && clientCode !== 'DEFAULT') values.client = clientCode;
         return {
             id: `paste-${index + 1}`,
             source: 'paste',
             rawRow,
             values,
             selected: true,
-            errors: validateProjectValues(values, getVisibleProjectFields(configRows, values.client)),
+            errors: validateProjectValues(values, getVisibleProjectFields(configRows, values.client || clientCode)),
         };
     });
 }
@@ -273,8 +453,13 @@ export function validateProjectValues(values = {}, fields = []) {
             if (field.min != null && numeric < Number(field.min)) errors.push(`${field.label || field.key} must be at least ${field.min}`);
             if (field.max != null && numeric > Number(field.max)) errors.push(`${field.label || field.key} must be at most ${field.max}`);
         }
-        if (field.type === 'select' && field.options?.length && value && !field.options.includes(value)) {
-            errors.push(`${field.label || field.key} must match a configured option`);
+        if (field.type === 'select' && field.options?.length && value) {
+            const allowed = field.options.map((option) => (
+                typeof option === 'object' && option != null ? option.value : option
+            ));
+            if (!allowed.includes(value)) {
+                errors.push(`${field.label || field.key} must match a configured option`);
+            }
         }
         return errors;
     }, []);
@@ -282,7 +467,7 @@ export function validateProjectValues(values = {}, fields = []) {
 
 export function buildProjectRecordPayload(values = {}, fields = [], clients = [], userId = null, source = {}) {
     const payload = {
-        status: values.status || 'new',
+        status: values.status || PROJECT_DEFAULT_STATUS,
         client_fields: {},
         raw_source: source,
         created_by: userId,

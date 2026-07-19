@@ -1,11 +1,11 @@
 # Fresh Supabase setup (greenfield only)
 
-This folder is the **complete in-repo SQL setup**. Files `01`–`11` plus `VERIFY_ALL.sql` are the only supported scripts.
+This folder is the **complete in-repo SQL setup**. Files `01`–`12` plus `VERIFY_ALL.sql` are the only supported scripts.
 
 Use them for a **brand-new** Supabase project.  
-Do **not** re-run the full `01`–`11` sequence on an existing production database.
+Do **not** re-run the full `01`–`12` sequence on an existing production database.
 
-For an existing DB that is missing newer objects, apply only the additive numbered scripts you still need (`07`–`11`), in order, then run `VERIFY_ALL.sql`.
+For an existing DB that is missing newer objects, apply only the additive numbered scripts you still need (`07`–`12`), in order, then run `VERIFY_ALL.sql`.
 
 ## Apply order (SQL Editor)
 
@@ -24,12 +24,13 @@ Run each file once, in order:
 | 9 | `09_REQUEST_HUB_RLS_FIX.sql` | Fix `can_view_request_hub_ticket` so creators see INSERT … RETURNING |
 | 10 | `10_PROJECT_DATABASE.sql` | Project master data, configurable client fields, schedule tracking |
 | 11 | `11_PROJECT_SCHEDULE_DATE_ACL.sql` | Lead-only date ACL trigger + `project_schedule_events.reason_code` |
+| 12 | `12_PROJECT_RECORD_STATUS.sql` | iTitle Form Entry statuses (`yet_to_plan`, `allocated`, …) |
 
 Then run:
 
 | Step | File |
 |------|------|
-| 12 | `VERIFY_ALL.sql` |
+| 13 | `VERIFY_ALL.sql` |
 
 ## After SQL
 

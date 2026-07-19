@@ -1,5 +1,5 @@
 -- ==========================================
--- Fresh greenfield verification (run after 01–11)
+-- Fresh greenfield verification (run after 01–12)
 -- ==========================================
 
 -- 1. Active role enum labels
@@ -115,7 +115,12 @@ where trigger_schema = 'public'
   )
 order by event_object_table, trigger_name;
 
--- 9. Health counts (empty is fine on fresh project)
+-- 9. Project record status check (iTitle Form Entry)
+select conname, pg_get_constraintdef(oid) as definition
+from pg_constraint
+where conname = 'project_records_status_check';
+
+-- 10. Health counts (empty is fine on fresh project)
 select
   (select count(*) from public.profiles) as profiles_count,
   (select count(*) from public.clients) as clients_count,

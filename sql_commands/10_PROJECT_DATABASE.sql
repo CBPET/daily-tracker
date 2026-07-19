@@ -55,7 +55,7 @@ create table if not exists public.project_records (
   sub_division text,
   page_count integer,
   complexity_level text,
-  status text not null default 'new',
+  status text not null default 'yet_to_plan',
   text_word_count integer,
   reference_count integer,
   reference_count_notes integer,
@@ -74,7 +74,7 @@ create table if not exists public.project_records (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint project_records_status_check check (
-    status in ('new', 'scheduled', 'in_progress', 'on_hold', 'completed', 'delivered', 'cancelled')
+    status in ('yet_to_plan', 'allocated', 'completed', 'on_hold', 'qc', 'wip', 'query')
   ),
   constraint project_records_page_count_nonnegative check (page_count is null or page_count >= 0),
   constraint project_records_text_word_count_nonnegative check (text_word_count is null or text_word_count >= 0),
@@ -318,16 +318,16 @@ values
     "coreFields": [
       {"key": "title", "label": "Title", "type": "text", "required": true, "aliases": ["title", "book title", "job title"]},
       {"key": "client", "label": "Client", "type": "client", "required": true, "aliases": ["client", "customer"]},
-      {"key": "subDivision", "label": "Sub Division", "type": "text", "aliases": ["sub division", "sub_div", "subdivision"]},
-      {"key": "pageCount", "label": "Page Count", "type": "number", "min": 0, "aliases": ["page count", "pages", "extent"]},
-      {"key": "complexityLevel", "label": "Complexity Level", "type": "text", "aliases": ["complexity level", "complexity"]},
-      {"key": "status", "label": "Status", "type": "select", "defaultValue": "new", "options": ["new", "scheduled", "in_progress", "on_hold", "completed", "delivered", "cancelled"], "aliases": ["status"]},
+      {"key": "subDivision", "label": "SUB_DIV", "type": "text", "required": true, "aliases": ["sub division", "sub_div", "subdivision"]},
+      {"key": "pageCount", "label": "Page Count", "type": "number", "min": 0, "required": true, "aliases": ["page count", "pages", "extent"]},
+      {"key": "complexityLevel", "label": "Complexity Level", "type": "select", "required": true, "options": ["Simple", "Medium", "Complex"], "aliases": ["complexity level", "complexity"]},
+      {"key": "status", "label": "Status", "type": "select", "required": true, "defaultValue": "yet_to_plan", "options": [{"value": "yet_to_plan", "label": "Yet to Plan"}, {"value": "allocated", "label": "Allocated"}, {"value": "completed", "label": "Completed"}, {"value": "on_hold", "label": "On hold"}, {"value": "qc", "label": "QC"}, {"value": "wip", "label": "WIP"}, {"value": "query", "label": "Query"}], "aliases": ["status"]},
       {"key": "textWordCount", "label": "Text Word Count", "type": "number", "min": 0, "aliases": ["text word count", "text words"]},
       {"key": "referenceCount", "label": "Reference Count", "type": "number", "min": 0, "aliases": ["reference count", "references"]},
       {"key": "referenceCountNotes", "label": "Reference count in notes", "type": "number", "min": 0, "aliases": ["reference count in notes", "reference count notes", "refs in notes"]},
       {"key": "refWordCount", "label": "Ref Word Count", "type": "number", "min": 0, "aliases": ["ref word count", "reference word count"]},
       {"key": "referenceStyle", "label": "Reference style", "type": "text", "aliases": ["reference style", "ref style"]},
-      {"key": "loginDate", "label": "Login Date", "type": "date", "aliases": ["login date", "received date"]},
+      {"key": "loginDate", "label": "Login Date", "type": "date", "required": true, "aliases": ["login date", "received date"]},
       {"key": "revisedLoginDate", "label": "Revised Login Date", "type": "date", "aliases": ["revised login date"]},
       {"key": "dueDate", "label": "Due Date", "type": "date", "aliases": ["due date"]},
       {"key": "revisedDueDate", "label": "Revised Due Date", "type": "date", "aliases": ["revised due date"]},
@@ -350,8 +350,8 @@ values
   '{
     "fields": [
       {"key": "jobRequired", "label": "Job Required", "type": "select", "aliases": ["job required", "job type"], "options": ["MUFO", "Typecode-Only", "TS", "Reconvert", "Prestyle", "Preedit", "MS Prep"]},
-      {"key": "xmlProduct", "label": "XML Product", "type": "select", "aliases": ["xml product"], "options": ["Product", "Nonproduct"]},
-      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division"], "options": ["Acad Oss", "Acad US", "Acad Ind", "Acad UK"]}
+      {"key": "xmlProduct", "label": "XML Product", "type": "select", "aliases": ["xml product", "xml product (product/nonproduct)"], "options": ["Product", "Nonproduct"]},
+      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division", "client/div", "client / div"], "options": ["Acad Oss", "Acad US", "Acad Ind", "Acad UK", "Law UK", "Law UK HE", "Law US", "Law US HE", "Med UK", "MED UK HB", "Med US", "MED HB", "LOOU"]}
     ]
   }'::jsonb
 ),
@@ -360,7 +360,7 @@ values
   'OOH',
   '{
     "fields": [
-      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division"], "options": ["Bloomsbury UK", "Bloomsbury US", "JHUP", "NNA", "LLP", "OOH", "OOH_AGE_PUB", "OOH_ARC", "OOH_ARM", "OOH_BritAcad", "OOH_BUP", "OOH_CP", "OOH_GS", "OOH_IBT", "OOH_IBT-Flexi", "OOH_MIP", "OOH_MUP", "OOH_RA Press", "OOH_RSC", "OOH_SUP", "OOH_UCL", "OOH_UL", "OOH_UMP", "OOH_BB", "OOH-GLB", "OOH-ICE", "OOH-JKP", "SUP", "TNF_SPIB", "Intellect", "OOH_PI", "OOH_Scribe", "OOH_WITS", "OOH_MC", "BUP-RSP", "OOH_BA", "OOH_YUP", "BAR"]}
+      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division", "client"], "options": ["Bloomsbury UK", "Bloomsbury US", "JHUP", "NNA", "LLP", "OOH", "OOH_AGE_PUB", "OOH_ARC", "OOH_ARM", "OOH_BritAcad", "OOH_BUP", "OOH_CP", "OOH_GS", "OOH_IBT", "OOH_IBT-Flexi", "OOH_MIP", "OOH_MUP", "OOH_RA Press", "OOH_RSC", "OOH_SUP", "OOH_UCL", "OOH_UL", "OOH_UMP", "OOH_BB", "OOH-GLB", "OOH-ICE", "OOH-JKP", "SUP", "TNF_SPIB", "Intellect", "OOH_PI", "OOH_Scribe", "OOH_WITS", "OOH_MC", "BUP-RSP", "OOH_BA", "OOH_YUP", "BAR"]}
     ]
   }'::jsonb
 ),
@@ -369,8 +369,8 @@ values
   'TNF',
   '{
     "fields": [
-      {"key": "model", "label": "Model", "type": "select", "aliases": ["model"], "options": ["Onshore", "Offshore", "Hybrid"]},
-      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division"], "options": ["TNF_FSM", "OOH_TNF"]}
+      {"key": "model", "label": "Model", "type": "select", "aliases": ["model", "onshore/offshore", "onshore / offshore"], "options": ["Onshore", "Offshore", "Hybrid"]},
+      {"key": "subDivision", "label": "SUB_DIV", "type": "select", "aliases": ["sub_div", "sub division", "client"], "options": ["TNF_FSM", "OOH_TNF"]}
     ]
   }'::jsonb
 ),

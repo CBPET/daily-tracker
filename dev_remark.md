@@ -6,9 +6,9 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 
 ## 1. Do not break live databases
 
-- The only supported SQL path in-repo is [`sql_commands/`](sql_commands/README.md): `01`–`11` + `VERIFY_ALL.sql`.
-- **Never** re-run the full greenfield sequence (`01`–`11`) on an existing production project.
-- For a **brand-new** Supabase project, run `01`–`11` in order, then `VERIFY_ALL.sql`.
+- The only supported SQL path in-repo is [`sql_commands/`](sql_commands/README.md): `01`–`12` + `VERIFY_ALL.sql`.
+- **Never** re-run the full greenfield sequence (`01`–`12`) on an existing production project.
+- For a **brand-new** Supabase project, run `01`–`12` in order, then `VERIFY_ALL.sql`.
 - Constraints added with `NOT VALID` still enforce new inserts; they do not rewrite old rows.
 
 ### Recommended SQL order for existing DB (additive only)
@@ -22,7 +22,8 @@ Apply only scripts whose objects are still missing, in order:
 5. Request Hub creator visibility: [`09_REQUEST_HUB_RLS_FIX.sql`](sql_commands/09_REQUEST_HUB_RLS_FIX.sql)
 6. Project database: [`10_PROJECT_DATABASE.sql`](sql_commands/10_PROJECT_DATABASE.sql) (after client hierarchy)
 7. Schedule date ACL + `reason_code`: [`11_PROJECT_SCHEDULE_DATE_ACL.sql`](sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql)
-8. [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql)
+8. Project status values: [`12_PROJECT_RECORD_STATUS.sql`](sql_commands/12_PROJECT_RECORD_STATUS.sql)
+9. [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql)
 
 ---
 

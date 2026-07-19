@@ -1,5 +1,19 @@
 # Project Database and Schedule Tracking
 
+Product UI name: **iTitle Database** (app nav: **iTitle**). Shell tabs: Dashboard | Project Tracker | Field Config (`canManage` only; JSON save for config editors) | Add New Project → Form Entry | Paste Preview | PubKit Import.
+
+Form Entry statuses: `yet_to_plan` (default), `allocated`, `completed`, `on_hold`, `qc`, `wip`, `query`. Complexity: Simple | Medium | Complex. Login Date required; Due / Revised Due optional (future: auto from login date).
+
+Apply migrations:
+
+```bash
+sql_commands/10_PROJECT_DATABASE.sql
+sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql
+sql_commands/12_PROJECT_RECORD_STATUS.sql
+```
+
+Run `10_` after `02_CLIENT_HIERARCHY.sql` because it can reference `clients`. Run `11_` after `10_`, then `12_` for status values (also safe on greenfield after updated `10_`).
+
 This phase adds project master data and per-stage schedule tracking. It is separate from `status_entries`.
 
 ## Why a Separate Table
@@ -17,26 +31,17 @@ Project intake is different data: title metadata, client-specific fields, due da
 | `project_schedule_tasks` | One row per project workflow stage, assignment, due dates, and completion tracking |
 | `project_schedule_events` | Audit/event trail for project and schedule changes (incl. date edits + reason) |
 
-Apply migrations:
-
-```bash
-sql_commands/10_PROJECT_DATABASE.sql
-sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql
-```
-
-Run `10_` after `02_CLIENT_HIERARCHY.sql` because it can reference `clients`. Run `11_` after `10_` on live or greenfield.
-
 ## Frontend modules
 
-Do not add Project Database logic to `App.jsx`. The app only mounts the projects shell.
+Do not add iTitle Database logic to `App.jsx`. The app only mounts the projects shell.
 
 ```text
 src/components/projects/
-  ProjectsShell.jsx              # tabs + data orchestration
+  ProjectsShell.jsx              # tabs + data orchestration (Dashboard | Tracker | Field Config | Add New Project)
   ProjectManualForm.jsx
   ProjectPasteIntake.jsx
   ProjectPubKitImport.jsx
-  ProjectFieldConfigEditor.jsx
+  ProjectFieldConfigEditor.jsx   # editable for managers+; read-only view for others
   ProjectTracker.jsx             # schedule grid; lead date edits via DateReasonModal
   ProjectScheduleDashboard.jsx   # Ontime/Ahead/Delay + Today Due/Long Delay/Delivery
   DateReasonModal.jsx
