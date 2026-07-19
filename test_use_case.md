@@ -4,7 +4,7 @@ Manual end-to-end cases. Record Pass/Fail and notes per case.
 
 **Conventions**
 
-- Preconditions assume a working Supabase project, migrations applied (`MISC_HOURS`, `EMAIL_CONFIRMED_SYNC` where relevant), and `npm run dev` or deployed app.
+- Preconditions assume a working Supabase project with greenfield `sql_commands/01`–`11` applied (or an existing DB that already has core + project schedule), and `npm run dev` or deployed app.
 - Replace sample emails with real mailboxes you control.
 
 ---
@@ -170,7 +170,7 @@ Manual end-to-end cases. Record Pass/Fail and notes per case.
 
 | | |
 |--|--|
-| **Precondition** | `EMAIL_CONFIRMED_SYNC.sql` applied |
+| **Precondition** | Greenfield `01`–`11` applied (email confirmed sync is part of core setup) |
 | **Steps** | User Management → Verified / Pending filters |
 | **Expected** | Badges match; pending users show **Resend** for GM/super_admin |
 
@@ -228,7 +228,7 @@ npm run build
 
 | | |
 |--|--|
-| **Precondition** | `sql_commands/10_PROJECT_DATABASE.sql` run after client hierarchy |
+| **Precondition** | `sql_commands/10_PROJECT_DATABASE.sql` (+ `11_PROJECT_SCHEDULE_DATE_ACL.sql` for date ACL) run after client hierarchy |
 | **Steps** | In Supabase SQL Editor, inspect `project_records`, `project_schedule_tasks`, `project_field_configs` |
 | **Expected** | Tables exist; OUP, OOH, TNF, OHO_OHB, DEFAULT field configs are seeded |
 

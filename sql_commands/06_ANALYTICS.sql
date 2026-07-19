@@ -1,7 +1,7 @@
 -- ==========================================
 -- Enterprise Analytics — Phase 3
 -- ==========================================
--- Depends on: ROLE_RLS_PREFLIGHT, SMART_REQUEST_HUB_PHASE1
+-- PREREQUISITE: Run previous numbered scripts in order (01 → 02 → 03 → 04 → 05).
 -- Active roles only: performer, team_lead, group_lead, manager, general_manager, super_admin
 -- ==========================================
 

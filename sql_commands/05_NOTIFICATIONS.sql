@@ -1,7 +1,7 @@
 -- ==========================================
 -- Enterprise Notifications — Phase 2
 -- ==========================================
--- Depends on: ROLE_RLS_PREFLIGHT, SMART_REQUEST_HUB_PHASE1
+-- PREREQUISITE: Run previous numbered scripts in order (01 → 02 → 03 → 04).
 -- ==========================================
 
 begin;

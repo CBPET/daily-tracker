@@ -1,8 +1,7 @@
 -- ==========================================
 -- Smart Request Hub — Phase 1
 -- ==========================================
--- PREREQUISITE: Run ROLE_RLS_PREFLIGHT.sql and ROLE_RLS_PREFLIGHT_VERIFY.sql first.
--- Do not rerun FRESH_SUPABASE_SETUP.sql.
+-- PREREQUISITE: Run previous numbered scripts in order (01 → 02 → 03).
 -- Active roles only: performer, team_lead, group_lead, manager, general_manager, super_admin
 -- ==========================================
 

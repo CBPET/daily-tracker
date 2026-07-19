@@ -6,23 +6,23 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 
 ## 1. Do not break live databases
 
-- **Never** re-run [`sql_commands/FRESH_SUPABASE_SETUP.sql`](sql_commands/FRESH_SUPABASE_SETUP.sql) on an existing production project.
-- For a **brand-new** Supabase project, use [`sql_commands/fresh/`](sql_commands/fresh/README.md) (`01`–`06` + `VERIFY_ALL.sql`) instead of the legacy root FRESH script.
-- Use incremental scripts (`MISC_HOURS_*`, `EMAIL_CONFIRMED_SYNC`, hierarchy, targets, weekly deliveries, `07_ONBOARDING.sql`).
+- The only supported SQL path in-repo is [`sql_commands/`](sql_commands/README.md): `01`–`11` + `VERIFY_ALL.sql`.
+- **Never** re-run the full greenfield sequence (`01`–`11`) on an existing production project.
+- For a **brand-new** Supabase project, run `01`–`11` in order, then `VERIFY_ALL.sql`.
 - Constraints added with `NOT VALID` still enforce new inserts; they do not rewrite old rows.
 
-### Recommended SQL order for current feature set (existing DB)
+### Recommended SQL order for existing DB (additive only)
 
-1. Hierarchy / clients / roles (if not already): `CLIENT_HIERARCHY_MIGRATION.sql`, role/status updates as needed  
-2. `ADD_DIVISION_TARGETS.sql`  
-3. `MISC_HOURS_RANGE_CONSTRAINT.sql` (replaces global 1–4)  
-4. `EMAIL_CONFIRMED_SYNC.sql`  
-5. `WEEKLY_REPORT_DELIVERIES.sql` (if using weekly email)  
-6. **Enterprise:** `ROLE_RLS_PREFLIGHT.sql` → `SMART_REQUEST_HUB_PHASE1.sql` → `ENTERPRISE_NOTIFICATIONS_PHASE2.sql` → `ENTERPRISE_ANALYTICS_PHASE3.sql`  
-7. Run matching `*_VERIFY.sql` scripts after each enterprise migration  
-8. Duplicate audit only: `STATUS_ENTRIES_DUPLICATES_REPORT.sql` — **do not** add a unique index until cleaned  
-9. Onboarding path split: `sql_commands/07_ONBOARDING.sql` (invite vs signup Resend)
-10. Project database phase: `sql_commands/10_PROJECT_DATABASE.sql` after client hierarchy is live
+Apply only scripts whose objects are still missing, in order:
+
+1. Core / hierarchy / targets already present from earlier deploys (covered by `01`–`03` on greenfield)
+2. Request Hub / notifications / analytics if missing: `04` → `05` → `06`
+3. Onboarding path split: [`07_ONBOARDING.sql`](sql_commands/07_ONBOARDING.sql) (invite vs signup Resend)
+4. Profile lifecycle status: [`08_PROFILES_STATUS.sql`](sql_commands/08_PROFILES_STATUS.sql)
+5. Request Hub creator visibility: [`09_REQUEST_HUB_RLS_FIX.sql`](sql_commands/09_REQUEST_HUB_RLS_FIX.sql)
+6. Project database: [`10_PROJECT_DATABASE.sql`](sql_commands/10_PROJECT_DATABASE.sql) (after client hierarchy)
+7. Schedule date ACL + `reason_code`: [`11_PROJECT_SCHEDULE_DATE_ACL.sql`](sql_commands/11_PROJECT_SCHEDULE_DATE_ACL.sql)
+8. [`VERIFY_ALL.sql`](sql_commands/VERIFY_ALL.sql)
 
 ---
 
@@ -32,7 +32,7 @@ Practical notes for maintainers. Prefer this file over outdated marketing README
 - Other tasks: any positive hours; placeholders suggest a full day (e.g. 8.0).
 - Productive tasks auto-estimate hours as `completed work × 8 ÷ target`; taken hours remains manual.
 
-If an old global 1–4 constraint is still live, inserts of 6–8h on Preedit will fail until `MISC_HOURS_RANGE_CONSTRAINT.sql` is applied.
+Greenfield `01_FRESH_CORE.sql` already encodes the Miscellaneous 1–4 rule. If an older live DB still has a global 1–4 hours constraint on all tasks, Preedit inserts of 6–8h will fail until that constraint is corrected in Supabase.
 
 ---
 
@@ -85,7 +85,7 @@ Do not expect Auth SMTP alone to power arbitrary Edge Function emails unless the
 
 - Entry form / Division Targets: **`FP Validation`** (canonical).
 - Historical rows / maps may still contain **`FL Validation`** — `normalizeTaskType()` aliases FL → FP for scoring.
-- Role enum historically used `assistant_manager` in SQL while UI uses `manager` — run `ROLE_RLS_PREFLIGHT.sql` before enterprise RLS.
+- Role enum historically used `assistant_manager` in SQL while UI uses `manager` — greenfield `01_FRESH_CORE.sql` uses `manager` only; confirm live DBs match before enabling enterprise RLS.
 - **Behaviour Score** ≠ **Performance Rating** — do not merge UI labels.
 
 ---

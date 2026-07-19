@@ -2,7 +2,7 @@
 -- CBPET Daily Tracker - Fresh Supabase Setup (core)
 -- Brand-new Supabase projects ONLY.
 -- Do NOT run on production databases that already have data.
--- Apply order: see sql_commands/fresh/README.md
+-- Apply order: see sql_commands/README.md (01 → 11, then VERIFY_ALL)
 -- ==========================================
 
 begin;

@@ -1,10 +1,11 @@
 # Fresh Supabase setup (greenfield only)
 
-Use this folder for a **brand-new** Supabase project.  
-Do **not** run these scripts on an existing production database.
+This folder is the **complete in-repo SQL setup**. Files `01`–`11` plus `VERIFY_ALL.sql` are the only supported scripts.
 
-Live upgrades should keep using the root `sql_commands/` migrations
-(`ROLE_RLS_PREFLIGHT.sql`, `SMART_REQUEST_HUB_PHASE1.sql`, etc.).
+Use them for a **brand-new** Supabase project.  
+Do **not** re-run the full `01`–`11` sequence on an existing production database.
+
+For an existing DB that is missing newer objects, apply only the additive numbered scripts you still need (`07`–`11`), in order, then run `VERIFY_ALL.sql`.
 
 ## Apply order (SQL Editor)
 
