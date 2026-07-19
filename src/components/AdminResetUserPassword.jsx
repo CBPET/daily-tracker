@@ -157,7 +157,7 @@ const AdminResetUserPassword = ({ profile, allProfiles, onClose, onPasswordReset
                     </div>
                 )}
 
-                <form onSubmit={handleResetPassword} className="space-y-5">
+                <form onSubmit={handleResetPassword} className="space-y-5" autoComplete="off">
                     {/* User Selection */}
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2">
@@ -167,6 +167,8 @@ const AdminResetUserPassword = ({ profile, allProfiles, onClose, onPasswordReset
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <input
                                 type="text"
+                                name="cbpet-admin-user-search"
+                                autoComplete="off"
                                 placeholder="Search by name or role..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -211,6 +213,8 @@ const AdminResetUserPassword = ({ profile, allProfiles, onClose, onPasswordReset
                         </label>
                         <input
                             type="email"
+                            name="cbpet-admin-reset-email"
+                            autoComplete="off"
                             value={
                                 selectedUserId
                                     ? (allProfiles.find((p) => p.id === selectedUserId)?.email || resetEmail)

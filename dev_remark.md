@@ -41,7 +41,7 @@ If an old global 1–4 constraint is still live, inserts of 6–8h on Preedit wi
 |----------|------|-----------------|
 | `invite-user` | `supabase/functions/invite-user` | **Deploy with `--no-verify-jwt`** (gateway JWT breaks CORS OPTIONS from GitHub Pages). Auth still checked inside the function. Secrets: `APP_URL` (Pages origin + trailing `/`, no `#`), platform `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`; caller must be GM/super_admin JWT |
 | `weekly-performance-report` | `supabase/functions/weekly-performance-report` | `APP_URL`, Gmail SMTP secrets if switched from Resend; partition by client+sub_division |
-| `dispatch-notification` | `supabase/functions/dispatch-notification` | JWT caller; service role inserts notifications |
+| `dispatch-notification` | `supabase/functions/dispatch-notification` | **Deploy with `--no-verify-jwt`** (same CORS OPTIONS issue as invite-user). Auth still checked inside the function. JWT caller; service role inserts notifications |
 | `request-hub-reminders` | `supabase/functions/request-hub-reminders` | Cron + service role; see `docs/REQUEST_HUB_REMINDERS.md` |
 | `calculate-behaviour-snapshots` | `supabase/functions/calculate-behaviour-snapshots` | Cron + service role; see `docs/BEHAVIOUR_SNAPSHOTS.md` |
 
@@ -52,12 +52,13 @@ Deploy example:
 supabase functions deploy invite-user --no-verify-jwt
 
 supabase functions deploy weekly-performance-report
-supabase functions deploy dispatch-notification
+# Required for browser notifications from GitHub Pages (CORS preflight)
+supabase functions deploy dispatch-notification --no-verify-jwt
 supabase functions deploy request-hub-reminders
 supabase functions deploy calculate-behaviour-snapshots
 ```
 
-Or Dashboard → Edge Functions → `invite-user` → disable **Verify JWT**.
+Or Dashboard → Edge Functions → `invite-user` / `dispatch-notification` → disable **Verify JWT**.
 
 `APP_URL` example: `https://cbpet.github.io/daily-tracker/`
 

@@ -1,0 +1,3 @@
+# Gateway JWT verification blocks browser OPTIONS preflight (no Authorization).
+# Auth is enforced inside the function via caller JWT.
+verify_jwt = false

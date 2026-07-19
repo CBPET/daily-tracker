@@ -143,6 +143,17 @@ declare
   v_sub text;
   t record;
 begin
+  -- Load ticket first so INSERT … RETURNING can see the new row for the creator
+  -- even if profile/role lookup is delayed or incomplete.
+  select * into t from public.request_hub_tickets where id = p_ticket_id;
+  if not found then
+    return false;
+  end if;
+
+  if t.created_by = auth.uid() or t.assigned_to = auth.uid() then
+    return true;
+  end if;
+
   select role::text, team_id, client_ref, sub_division
     into v_role, v_team, v_client_ref, v_sub
   from public.profiles
@@ -153,15 +164,6 @@ begin
   end if;
 
   if v_role in ('super_admin', 'general_manager', 'manager') then
-    return true;
-  end if;
-
-  select * into t from public.request_hub_tickets where id = p_ticket_id;
-  if not found then
-    return false;
-  end if;
-
-  if t.created_by = auth.uid() or t.assigned_to = auth.uid() then
     return true;
   end if;
 

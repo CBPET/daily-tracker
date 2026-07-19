@@ -70,7 +70,7 @@ const ForgotPassword = ({ setView }) => {
                             </div>
                         )}
 
-                        <form onSubmit={handleReset} className="space-y-6">
+                        <form onSubmit={handleReset} className="space-y-6" autoComplete="off">
                             <div>
                                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">
                                     Your Email
@@ -79,6 +79,8 @@ const ForgotPassword = ({ setView }) => {
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                     <input
                                         type="email"
+                                        name="cbpet-forgot-id"
+                                        autoComplete="off"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none dark:text-white font-medium"

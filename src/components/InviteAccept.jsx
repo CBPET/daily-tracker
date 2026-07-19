@@ -173,7 +173,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
                             <div>
                                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">
                                     Display Name
@@ -182,12 +182,13 @@ const InviteAccept = ({ setView, authCallbackError }) => {
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 w-5 h-5" />
                                     <input
                                         type="text"
+                                        name="cbpet-invite-name"
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none transition-all dark:text-white font-medium"
                                         placeholder="Your display name"
                                         required
-                                        autoComplete="name"
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
@@ -200,6 +201,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 w-5 h-5" />
                                     <input
                                         type="password"
+                                        name="cbpet-invite-secret"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none transition-all dark:text-white font-medium"
@@ -219,6 +221,7 @@ const InviteAccept = ({ setView, authCallbackError }) => {
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 w-5 h-5" />
                                     <input
                                         type="password"
+                                        name="cbpet-invite-secret-confirm"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none transition-all dark:text-white font-medium"

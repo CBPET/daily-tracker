@@ -24,6 +24,12 @@ function safeFileName(name) {
 }
 
 export async function createRequest(payload, files = [], profile) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const createdBy = session?.user?.id || profile?.id;
+  if (!createdBy) throw new Error('Not authenticated');
+
   const browser =
     typeof navigator !== 'undefined'
       ? `${navigator.userAgent || ''}`.slice(0, 240)
@@ -48,7 +54,7 @@ export async function createRequest(payload, files = [], profile) {
     browser,
     resolution,
     timezone,
-    created_by: profile.id,
+    created_by: createdBy,
     created_role: profile.role,
     status: 'Request',
     priority: payload.priority || 'Medium',

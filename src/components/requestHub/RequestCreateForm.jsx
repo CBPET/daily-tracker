@@ -49,7 +49,7 @@ export default function RequestCreateForm({ clients, profile, onSubmit, onCancel
     <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
       <div className="grid md:grid-cols-2 gap-4">
         <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Project name</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Project name (optional)</span>
           <input
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
             value={form.project_name}
@@ -70,7 +70,7 @@ export default function RequestCreateForm({ clients, profile, onSubmit, onCancel
           </select>
         </label>
         <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sub-division</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sub-division (optional)</span>
           <select
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
             value={form.sub_division}
@@ -81,7 +81,7 @@ export default function RequestCreateForm({ clients, profile, onSubmit, onCancel
           </select>
         </label>
         <label className="block space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Task type</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Task type (optional)</span>
           <input
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
             value={form.task_type}

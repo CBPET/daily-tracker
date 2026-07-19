@@ -89,7 +89,7 @@ const Signup = ({ setView }) => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSignup} className="space-y-6">
+                        <form onSubmit={handleSignup} className="space-y-6" autoComplete="off">
                             <div>
                                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2 ml-1">
                                     Full Name
@@ -98,6 +98,8 @@ const Signup = ({ setView }) => {
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                     <input
                                         type="text"
+                                        name="cbpet-signup-name"
+                                        autoComplete="off"
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"
@@ -115,6 +117,8 @@ const Signup = ({ setView }) => {
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                     <input
                                         type="email"
+                                        name="cbpet-signup-id"
+                                        autoComplete="off"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"
@@ -132,6 +136,8 @@ const Signup = ({ setView }) => {
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                     <input
                                         type="password"
+                                        name="cbpet-signup-secret"
+                                        autoComplete="new-password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"

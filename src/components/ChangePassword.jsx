@@ -118,7 +118,9 @@ const ChangePassword = ({ profile, onClose }) => {
                     </div>
                 )}
 
-                <form onSubmit={handleChangePassword} className="space-y-5">
+                <form onSubmit={handleChangePassword} className="space-y-5" autoComplete="off">
+                    <input type="text" name="cbpet-decoy-user" autoComplete="username" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" readOnly value="" />
+                    <input type="password" name="cbpet-decoy-pass" autoComplete="current-password" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" readOnly value="" />
                     {/* Current Password */}
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2">
@@ -127,6 +129,8 @@ const ChangePassword = ({ profile, onClose }) => {
                         <div className="relative">
                             <input
                                 type={showCurrentPassword ? 'text' : 'password'}
+                                name="cbpet-current-secret"
+                                autoComplete="new-password"
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition dark:text-white"
@@ -151,6 +155,8 @@ const ChangePassword = ({ profile, onClose }) => {
                         <div className="relative">
                             <input
                                 type={showNewPassword ? 'text' : 'password'}
+                                name="cbpet-new-secret"
+                                autoComplete="new-password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition dark:text-white"
@@ -176,6 +182,8 @@ const ChangePassword = ({ profile, onClose }) => {
                         <div className="relative">
                             <input
                                 type={showConfirmPassword ? 'text' : 'password'}
+                                name="cbpet-new-secret-confirm"
+                                autoComplete="new-password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition dark:text-white"

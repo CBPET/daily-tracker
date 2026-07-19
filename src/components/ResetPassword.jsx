@@ -129,7 +129,7 @@ const ResetPassword = ({ setView, authCallbackError }) => {
                             </div>
                         )}
 
-                        <form onSubmit={handleUpdatePassword} className="space-y-6">
+                        <form onSubmit={handleUpdatePassword} className="space-y-6" autoComplete="off">
                             <div>
                                 <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2 ml-1">
                                     New Password
@@ -138,6 +138,7 @@ const ResetPassword = ({ setView, authCallbackError }) => {
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500 w-5 h-5" />
                                     <input
                                         type="password"
+                                        name="cbpet-reset-secret"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"
@@ -157,6 +158,7 @@ const ResetPassword = ({ setView, authCallbackError }) => {
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500 w-5 h-5" />
                                     <input
                                         type="password"
+                                        name="cbpet-reset-secret-confirm"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-amber-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"

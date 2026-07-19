@@ -49,7 +49,10 @@ const Login = ({ setView, authCallbackError }) => {
                     </div>
                 )}
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-6" autoComplete="off">
+                    {/* Decoy fields to absorb password-manager autofill */}
+                    <input type="text" name="cbpet-decoy-user" autoComplete="username" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" readOnly value="" />
+                    <input type="password" name="cbpet-decoy-pass" autoComplete="current-password" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" readOnly value="" />
                     <div>
                         <label className="block text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2 ml-1">
                             Email Identifier
@@ -58,6 +61,8 @@ const Login = ({ setView, authCallbackError }) => {
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
                                 type="email"
+                                name="cbpet-login-id"
+                                autoComplete="off"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"
@@ -84,6 +89,8 @@ const Login = ({ setView, authCallbackError }) => {
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
                                 type="password"
+                                name="cbpet-login-secret"
+                                autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 rounded-2xl outline-none transition-all dark:text-white font-medium"

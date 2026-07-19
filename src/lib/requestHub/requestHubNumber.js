@@ -1,8 +1,8 @@
-/** Generate SRH-######## ticket numbers with uniqueness retry support. */
+/** Generate 8-digit ticket numbers with uniqueness retry support. */
 
 export function generateTicketNumber() {
   const n = Math.floor(10000000 + Math.random() * 90000000);
-  return `SRH-${n}`;
+  return String(n);
 }
 
 export async function createUniqueTicketNumber(insertFn, maxAttempts = 5) {

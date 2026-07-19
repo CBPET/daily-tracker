@@ -140,7 +140,7 @@ Capability catalog: what the product can do, inputs/outputs, and who can use eac
 ## S12 — Raise Smart Request Hub request
 
 - **Inputs:** Category, title, description, client, screenshots (optional)  
-- **Outputs:** `request_hub_tickets` with `SRH-########`; audit event; optional notifications  
+- **Outputs:** `request_hub_tickets` with 8-digit `ticket_number`; audit event; optional notifications  
 - **Components:** `SmartRequestHub`, `requestHubService`  
 - **Route:** `#request-hub`  
 - **Flag:** `VITE_ENABLE_SMART_REQUEST_HUB`
