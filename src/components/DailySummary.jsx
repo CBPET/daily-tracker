@@ -128,7 +128,7 @@ const DailySummary = ({
     );
 
     return (
-        <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[calc(100vh-12rem)]">
+        <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col min-h-[min(70vh,calc(100vh-1rem))] max-h-[calc(100vh-1rem)]">
             <div className="flex flex-col gap-4 mb-6 shrink-0">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
