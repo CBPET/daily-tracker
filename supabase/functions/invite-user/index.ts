@@ -214,12 +214,50 @@ Deno.serve(async (req) => {
       throw new Error("Caller profile not found");
     }
 
+    const body = await req.json().catch(() => ({}));
+    const rawAction = String(body.action || "invite").trim();
+
+    // ── Set temporary password (super_admin / general_manager / manager) ──
+    if (rawAction === "set_password") {
+      if (!["super_admin", "general_manager", "manager"].includes(callerProfile.role)) {
+        return jsonResponse({ ok: false, error: "Access denied" }, 403);
+      }
+
+      const userId = String(body.userId || "").trim();
+      const password = String(body.password || "");
+      if (!userId) {
+        return jsonResponse({ ok: false, error: "userId is required" }, 400);
+      }
+      if (password.length < 8) {
+        return jsonResponse({ ok: false, error: "Password must be at least 8 characters" }, 400);
+      }
+      if (userId === userData.user.id) {
+        return jsonResponse({ ok: false, error: "Use Change Password for your own account" }, 400);
+      }
+
+      const { data: targetUser, error: getErr } = await admin.auth.admin.getUserById(userId);
+      if (getErr || !targetUser?.user) {
+        return jsonResponse({ ok: false, error: "User not found" }, 404);
+      }
+
+      const { error: updErr } = await admin.auth.admin.updateUserById(userId, { password });
+      if (updErr) {
+        return jsonResponse({ ok: false, error: updErr.message || "Failed to set password" }, 400);
+      }
+
+      return jsonResponse({
+        ok: true,
+        action: "set_password",
+        userId,
+        email: targetUser.user.email || null,
+      });
+    }
+
     if (!["super_admin", "general_manager"].includes(callerProfile.role)) {
       return jsonResponse({ ok: false, error: "Access denied" }, 403);
     }
 
-    const body = await req.json().catch(() => ({}));
-    const action = body.action === "resend" ? "resend" : "invite";
+    const action = rawAction === "resend" ? "resend" : "invite";
     const email = String(body.email || "").trim().toLowerCase();
     let role = String(body.role || "performer").trim();
     const onboardingHint =

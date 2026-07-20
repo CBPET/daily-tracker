@@ -1,26 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import Modal from './components/Modal';
-import Toast from './components/Toast';
+import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import DailySummary from './components/DailySummary';
+import DailyTaskForm from './components/daily/DailyTaskForm';
+import AppShell from './components/AppShell';
+import AdminUsersPanel from './components/admin/AdminUsersPanel';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import InviteAccept from './components/InviteAccept';
 import LandingPage from './components/LandingPage';
-import WorkflowManager from './components/WorkflowManager';
-import UserManagement from './components/UserManagement';
 import ChangePassword from './components/ChangePassword';
 import AdminResetUserPassword from './components/AdminResetUserPassword';
-import AdminUserRow from './components/AdminUserRow';
-import ClientManagement from './components/ClientManagement';
 import ProjectDatabaseManager from './components/projects';
 import SmartRequestHub from './components/requestHub/SmartRequestHub';
-import { NotificationProvider } from './components/notifications/NotificationProvider';
-import NotificationBell from './components/notifications/NotificationBell';
-import NotificationDrawer from './components/notifications/NotificationDrawer';
-import NotificationCenter from './components/notifications/NotificationCenter';
 import { supabase, formatAuthClientError } from './lib/supabase';
 import {
     completeAuthCallback,
@@ -28,44 +21,17 @@ import {
     isInviteCallback,
     isAuthCallbackUrl,
     isSignupConfirmFromUrl,
-    sanitizeAuthUrl,
     getAuthRedirectUrl,
 } from './lib/authRedirect';
 import { parseAnalyticsHash } from './lib/performanceRating';
 import { deriveDisplayNameFromEmail, isValidEmail } from './lib/displayName';
-import { isSmartRequestHubEnabled, isNotificationsEnabled, isEntryDuplicateGuardEnabled } from './lib/featureFlags';
+import { isSmartRequestHubEnabled, isNotificationsEnabled } from './lib/featureFlags';
 import { notifyDailyTrackerEvent } from './lib/notifications/notificationRules';
 import {
     STANDARD_TARGETS,
-    STANDARD_WORK_HOURS_PER_DAY,
-    TARGET_INFO_ROWS,
-    TARGET_UNITS,
-    calcEstimatedHours,
     normalizeTaskType,
 } from './lib/targetUtils';
-import {
-    LayoutDashboard,
-    ClipboardList,
-    RefreshCw,
-    LogOut,
-    User,
-    ShieldCheck,
-    Briefcase,
-    Loader2,
-    Users,
-    Settings,
-    Search,
-    UserPlus,
-    Mail,
-    Copy,
-    Check,
-    Trash2,
-    Lock,
-    KeyRound,
-    Inbox,
-    Info,
-    Database,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const App = () => {
     // ── Hash Routing Constants ──
@@ -114,49 +80,35 @@ const App = () => {
     });
 
     // ── App State ──
-    const getTodayISO = () => new Date().toISOString().slice(0, 10);
-    const [performerName, setPerformerName] = useState('');
-    const [titleName, setTitleName] = useState('');
-    const [batchFlow, setBatchFlow] = useState(false);
-    const [batchNumber, setBatchNumber] = useState('');
-    const [completedPages, setCompletedPages] = useState('');
-    const [castOffPages, setCastOffPages] = useState('');
-    const [taskType, setTaskType] = useState('');
-    const [estimatedTime, setEstimatedTime] = useState('');
-    const [takenTime, setTakenTime] = useState('');
-    const [entryDate, setEntryDate] = useState(getTodayISO);
     const [statusEntries, setStatusEntries] = useState([]);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('cbpet_darkMode') === 'true');
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [accessibleProfiles, setAccessibleProfiles] = useState([]);
-    const [showErrorModal, setShowErrorModal] = useState(false);
-    const [showTargetInfoModal, setShowTargetInfoModal] = useState(false);
     const [activeTab, setActiveTab] = useState(getInitialTab);
     const [isSyncing, setIsSyncing] = useState(false);
     const [clients, setClients] = useState([]);
-    const [selectedClient, setSelectedClient] = useState('');
-    const [selectedSubDivision, setSelectedSubDivision] = useState('');
     const [divisionTargets, setDivisionTargets] = useState([]);
 
     // ── Admin State ──
     const [allProfiles, setAllProfiles] = useState([]);
     const [isAdminSyncing, setIsAdminSyncing] = useState(false);
-    const [userSearchTerm, setUserSearchTerm] = useState('');
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [showAddUserModal, setShowAddUserModal] = useState(false);
-    const [showAdminEmailInviteModal, setShowAdminEmailInviteModal] = useState(false);
-    const [inviteEmail, setInviteEmail] = useState('');
-    const [inviteRole, setInviteRole] = useState('performer');
-    const [inviteSending, setInviteSending] = useState(false);
-    const [newUserEmail, setNewUserEmail] = useState('');
-    const [newUserName, setNewUserName] = useState('');
-    const [newUserRole, setNewUserRole] = useState('performer');
-    const [adminSubTab, setAdminSubTab] = useState('users'); // users, clients, workflows, projects
-    
+
     // ── Password Management State ──
     const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-    const [showAdminResetPasswordModal, setShowAdminResetPasswordModal] = useState(false);
+    const [adminPasswordModal, setAdminPasswordModal] = useState(null); // { userId?, mode? } | null
+
+    const openAdminPasswordModal = (opts = {}) => {
+        setAdminPasswordModal({
+            userId: opts.userId || '',
+            mode: opts.mode === 'set_password' ? 'set_password' : 'reset_link',
+        });
+    };
+
+    const showAppToast = (message) => {
+        setToastMessage(message);
+        setShowToast(true);
+    };
 
     // ── Auth Effects ──
     useEffect(() => {
@@ -248,7 +200,6 @@ const App = () => {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             if (currentSession?.user?.id !== uid) return;
             setProfile(data);
-            if (data.performer_name) setPerformerName(data.performer_name);
         } catch (error) {
             console.error('Error fetching profile:', error.message);
             const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -472,28 +423,10 @@ const App = () => {
         return ['super_admin', 'general_manager', 'manager'].includes(profile.role);
     };
 
-    const canSelectPerformerOnForm = ['super_admin', 'general_manager', 'manager'].includes(profile?.role);
-
-    useEffect(() => {
-        if (!profile) return;
-        
-        if (!canSelectPerformerOnForm || performerName === profile.performer_name) {
-            setSelectedClient(profile.client_id || 'DEFAULT_CLIENT');
-            setSelectedSubDivision(profile.sub_division || '');
-        } else {
-            const selectedProf = accessibleProfiles.find(p => p.performer_name === performerName);
-            if (selectedProf) {
-                setSelectedClient(selectedProf.client_id || 'DEFAULT_CLIENT');
-                setSelectedSubDivision(selectedProf.sub_division || '');
-            }
-        }
-    }, [performerName, profile, accessibleProfiles, canSelectPerformerOnForm]);
-
     const handleUpdateUserRole = async (userId, newRole, clientId) => {
         // RBAC: Only super_admin and general_manager can update users
         if (profile?.role !== 'super_admin' && profile?.role !== 'general_manager') {
-            setToastMessage('❌ Access Denied: Only super_admin and general_manager can update users');
-            setShowToast(true);
+            showAppToast('❌ Access Denied: Only super_admin and general_manager can update users');
             return;
         }
 
@@ -504,20 +437,17 @@ const App = () => {
                 .eq('id', userId);
 
             if (error) throw error;
-            setToastMessage('✅ User updated successfully');
-            setShowToast(true);
+            showAppToast('✅ User updated successfully');
             fetchAllProfiles();
         } catch (error) {
-            setToastMessage('❌ Error updating user: ' + error.message);
-            setShowToast(true);
+            showAppToast('❌ Error updating user: ' + error.message);
         }
     };
 
     const handleDeleteUser = async (userId) => {
         // RBAC: Only super_admin and general_manager can delete users
         if (profile?.role !== 'super_admin' && profile?.role !== 'general_manager') {
-            setToastMessage('❌ Access Denied: Only super_admin and general_manager can delete users');
-            setShowToast(true);
+            showAppToast('❌ Access Denied: Only super_admin and general_manager can delete users');
             return;
         }
 
@@ -525,38 +455,29 @@ const App = () => {
         try {
             const { error } = await supabase.from('profiles').delete().eq('id', userId);
             if (error) throw error;
-            setToastMessage('🗑️ User profile removed');
-            setShowToast(true);
+            showAppToast('🗑️ User profile removed');
             fetchAllProfiles();
         } catch (error) {
-            setToastMessage('❌ Error deleting user: ' + error.message);
-            setShowToast(true);
+            showAppToast('❌ Error deleting user: ' + error.message);
         }
     };
 
-    const handleAddNewUser = async (e) => {
-        e.preventDefault();
-
+    const handleAddNewUser = async ({ email, name, role }) => {
         // RBAC: Only super_admin and general_manager can add users
         if (profile?.role !== 'super_admin' && profile?.role !== 'general_manager') {
-            setToastMessage('❌ Access Denied: Only super_admin and general_manager can add users');
-            setShowToast(true);
-            return;
+            showAppToast('❌ Access Denied: Only super_admin and general_manager can add users');
+            return false;
         }
 
-        // Validate inputs
-        if (!newUserEmail || !newUserName) {
-            setToastMessage('❌ Email and Name are required');
-            setShowToast(true);
-            return;
+        if (!email || !name) {
+            showAppToast('❌ Email and Name are required');
+            return false;
         }
 
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(newUserEmail)) {
-            setToastMessage('❌ Invalid email format. Please use a valid email address (e.g., user@gmail.com, user@company.com)');
-            setShowToast(true);
-            return;
+        if (!emailRegex.test(email)) {
+            showAppToast('❌ Invalid email format. Please use a valid email address (e.g., user@gmail.com, user@company.com)');
+            return false;
         }
 
         try {
@@ -564,12 +485,12 @@ const App = () => {
             const tempPassword = `${Math.random().toString(36).slice(-10)}A1!`;
 
             const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: newUserEmail,
+                email,
                 password: tempPassword,
                 options: {
                     data: {
-                        full_name: newUserName,
-                        performer_name: newUserName,
+                        full_name: name,
+                        performer_name: name,
                         onboarding: 'signup',
                     },
                     emailRedirectTo: getAuthRedirectUrl(),
@@ -591,10 +512,10 @@ const App = () => {
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
-                    performer_name: newUserName,
-                    role: newUserRole,
+                    performer_name: name,
+                    role,
                     client_id: 'DEFAULT_CLIENT',
-                    email: newUserEmail,
+                    email,
                     onboarding: 'signup',
                 })
                 .eq('id', authData.user.id);
@@ -603,10 +524,10 @@ const App = () => {
                 const { error: retryError } = await supabase
                     .from('profiles')
                     .update({
-                        performer_name: newUserName,
-                        role: newUserRole,
+                        performer_name: name,
+                        role,
                         client_id: 'DEFAULT_CLIENT',
-                        email: newUserEmail,
+                        email,
                     })
                     .eq('id', authData.user.id);
                 if (retryError) throw retryError;
@@ -614,59 +535,18 @@ const App = () => {
                 throw profileError;
             }
 
-            setToastMessage(`✅ User "${newUserName}" created with ${newUserRole} role. Confirmation email sent to ${newUserEmail}.`);
-            setShowToast(true);
-            setShowAddUserModal(false);
-            setNewUserEmail('');
-            setNewUserName('');
-            setNewUserRole('performer');
+            showAppToast(`✅ User "${name}" created with ${role} role. Confirmation email sent to ${email}.`);
             fetchAllProfiles();
+            return true;
         } catch (error) {
-            setToastMessage('❌ Error adding user: ' + error.message);
-            setShowToast(true);
+            showAppToast('❌ Error adding user: ' + error.message);
+            return false;
         }
     };
-
-    const syncToSupabase = async (newEntry) => {
-        if (!supabase || !session) return;
-        try {
-            const entryWithAuth = {
-                id: newEntry.id,
-                date: newEntry.date,
-                performerName: newEntry.performerName,
-                titleName: newEntry.titleName,
-                completedPages: newEntry.completedPages,
-                taskType: newEntry.taskType,
-                estimatedTime: newEntry.estimatedTime,
-                takenTime: newEntry.takenTime,
-                timeAchieved: newEntry.timeAchieved,
-                targetAchieved: newEntry.targetAchieved,
-                status: newEntry.status,
-                user_id: session.user.id,
-                client_id: newEntry.client_id || 'DEFAULT_CLIENT',
-                sub_division: newEntry.sub_division || null,
-                batch_number: newEntry.batch_number ?? null,
-            };
-            const { error } = await supabase.from('status_entries').insert([entryWithAuth]);
-            if (error) throw error;
-        } catch (error) {
-            console.error('Error syncing:', error.message);
-            setToastMessage('❌ Sync failed: ' + error.message);
-            setShowToast(true);
-        }
-    };
-
-    // ── Config ──
-    const MIN_HOURS = 1;
-    const MAX_HOURS = 4;
-    const standardTargets = STANDARD_TARGETS;
-    // Selectable task types; Miscellaneous has no productivity target
-    const taskTypeOptions = [...Object.keys(standardTargets).filter((task) => task !== 'FL Validation'), 'Miscellaneous'];
-    const MOTIVATIONAL_MESSAGE = 'Keep Trying!';
 
     const getDivisionTargetOverride = (task, client, subDiv) => {
         const canonicalTask = normalizeTaskType(task);
-        return divisionTargets.find(t =>
+        return divisionTargets.find((t) =>
             t.client_id === client &&
             t.sub_division === subDiv &&
             normalizeTaskType(t.task_type) === canonicalTask
@@ -678,168 +558,12 @@ const App = () => {
         const custom = getDivisionTargetOverride(task, client, subDiv);
         if (custom) return Number(custom.target_value);
         const canonicalTask = normalizeTaskType(task);
-        return standardTargets[canonicalTask] || standardTargets[task] || 0;
-    };
-
-    const isPositiveHours = (value) => {
-        const n = Number(value);
-        return Number.isFinite(n) && n > 0;
-    };
-
-    const isMiscHoursInRange = (value) => {
-        const n = Number(value);
-        return Number.isFinite(n) && n >= MIN_HOURS && n <= MAX_HOURS;
-    };
-
-    const timeAchievedPercentage = estimatedTime > 0 && takenTime > 0 ? ((estimatedTime / takenTime) * 100).toFixed(2) : 0;
-
-    const activeTargetVal = taskType ? getTargetForEntry(taskType, selectedClient, selectedSubDivision) : 0;
-    const isMiscellaneous = taskType === 'Miscellaneous';
-    const activeTargetOverride = taskType ? getDivisionTargetOverride(taskType, selectedClient, selectedSubDivision) : null;
-    const activeTargetSource = activeTargetOverride ? 'Division Override' : 'Standard Target';
-    const activeTargetUnit = TARGET_UNITS[normalizeTaskType(taskType)] || TARGET_UNITS[taskType] || 'items/day';
-    const isTitlesTask = activeTargetUnit.startsWith('titles');
-    const completedWorkMeta = (() => {
-        if (!taskType) {
-            return { label: 'Completed Work', placeholder: '150', unitWord: 'item' };
-        }
-        if (activeTargetUnit.startsWith('titles')) {
-            return { label: 'Completed Titles', placeholder: '1', unitWord: 'title' };
-        }
-        if (activeTargetUnit.startsWith('refs')) {
-            return { label: 'Completed References', placeholder: '50', unitWord: 'ref' };
-        }
-        if (activeTargetUnit.startsWith('pages')) {
-            return { label: 'Completed Pages', placeholder: '150', unitWord: 'page' };
-        }
-        return { label: 'Completed Work', placeholder: '150', unitWord: 'item' };
-    })();
-    const hoursPerUnit =
-        !isMiscellaneous && activeTargetVal > 0
-            ? Number((STANDARD_WORK_HOURS_PER_DAY / activeTargetVal).toFixed(2))
-            : 0;
-    const targetAchievedPercentage = !isMiscellaneous && taskType && activeTargetVal > 0 && takenTime > 0
-        ? ((completedPages / ((activeTargetVal / STANDARD_WORK_HOURS_PER_DAY) * takenTime)) * 100).toFixed(2) : 0;
-
-    const prevTaskUnitRef = useRef('');
-    useEffect(() => {
-        const prevUnit = prevTaskUnitRef.current;
-        if (isTitlesTask && !String(prevUnit).startsWith('titles')) {
-            setCompletedPages('1');
-            setCastOffPages('');
-        }
-        if (!isTitlesTask && String(prevUnit).startsWith('titles')) {
-            setCastOffPages('');
-        }
-        prevTaskUnitRef.current = taskType ? activeTargetUnit : '';
-    }, [taskType, activeTargetUnit, isTitlesTask]);
-
-    // Cast-off: always 1 title per entry (hidden); drives 2h estimate
-    useEffect(() => {
-        if (isTitlesTask && completedPages !== '1') {
-            setCompletedPages('1');
-        }
-    }, [isTitlesTask, completedPages]);
-
-    useEffect(() => {
-        if (!taskType) {
-            setEstimatedTime('');
-            return;
-        }
-        if (isMiscellaneous) {
-            setEstimatedTime('');
-            return;
-        }
-        if (isTitlesTask) {
-            const autoEstimatedHours = calcEstimatedHours(taskType, 1, activeTargetVal);
-            setEstimatedTime(autoEstimatedHours > 0 ? autoEstimatedHours.toFixed(2) : '');
-            return;
-        }
-        const autoEstimatedHours = calcEstimatedHours(taskType, completedPages, activeTargetVal);
-        setEstimatedTime(autoEstimatedHours > 0 ? autoEstimatedHours.toFixed(2) : '');
-    }, [taskType, completedPages, activeTargetVal, isMiscellaneous, isTitlesTask]);
-
-    // ── Handlers ──
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const workUnits = isTitlesTask ? 1 : Number(completedPages);
-        if (!performerName || !titleName || !taskType || !estimatedTime || !takenTime || !entryDate) {
-            setShowErrorModal(true);
-            return;
-        }
-        if (!isTitlesTask && !completedPages) {
-            setShowErrorModal(true);
-            return;
-        }
-        if (batchFlow && !batchNumber) {
-            setToastMessage('❌ Batch Number is required when Batch flow is enabled');
-            setShowToast(true);
-            return;
-        }
-        if (isEntryDuplicateGuardEnabled()) {
-            const dup = statusEntries.find(
-                (e) =>
-                    String(e.date).slice(0, 10) === entryDate &&
-                    e.titleName === titleName.trim() &&
-                    e.taskType === taskType &&
-                    (e.performerName === performerName.trim() || e.user_id === session?.user?.id)
-            );
-            if (dup) {
-                const edit = window.confirm('Already Submitted. Edit Existing?');
-                if (!edit) return;
-            }
-        }
-        if (isMiscellaneous) {
-            if (!isMiscHoursInRange(estimatedTime) || !isMiscHoursInRange(takenTime)) {
-                setToastMessage(`❌ Miscellaneous Estimated and Taken Hours must be between ${MIN_HOURS} and ${MAX_HOURS}`);
-                setShowToast(true);
-                return;
-            }
-        } else if (!isPositiveHours(estimatedTime) || !isPositiveHours(takenTime)) {
-            setToastMessage('❌ Estimated and Taken Hours must be greater than 0');
-            setShowToast(true);
-            return;
-        }
-        const titlesTargetPct = isTitlesTask && activeTargetVal > 0 && takenTime > 0
-            ? ((1 / ((activeTargetVal / STANDARD_WORK_HOURS_PER_DAY) * takenTime)) * 100).toFixed(2)
-            : targetAchievedPercentage;
-        const achievementStatus = isMiscellaneous
-            ? 'N/A'
-            : (Number(titlesTargetPct) >= 100 ? 'Achieved' : MOTIVATIONAL_MESSAGE);
-        const newEntry = {
-            id: Date.now(), date: entryDate, performerName: performerName.trim(),
-            titleName: titleName.trim(), completedPages: workUnits, taskType,
-            estimatedTime: Number(estimatedTime), takenTime: Number(takenTime),
-            timeAchieved: timeAchievedPercentage,
-            targetAchieved: isMiscellaneous ? 0 : titlesTargetPct,
-            status: achievementStatus,
-            client_id: selectedClient || 'DEFAULT_CLIENT',
-            sub_division: selectedSubDivision || null,
-            batch_number: batchFlow && batchNumber ? Number(batchNumber) : null,
-        };
-        setStatusEntries(prev => [newEntry, ...prev]);
-        await syncToSupabase(newEntry);
-        setTitleName(''); setBatchFlow(false); setBatchNumber(''); setCompletedPages(''); setCastOffPages(''); setTaskType(''); setEstimatedTime(''); setTakenTime('');
-        setToastMessage('✅ Status saved and synced!'); setShowToast(true);
-        if (notificationsEnabled && canSelectPerformerOnForm && performerName !== profile?.performer_name) {
-            const selectedProf = accessibleProfiles.find((p) => p.performer_name === performerName);
-            if (selectedProf?.id && selectedProf.id !== session?.user?.id) {
-                notifyDailyTrackerEvent({
-                    type: 'entry_on_behalf',
-                    receiverIds: [selectedProf.id],
-                    title: 'Entry logged on your behalf',
-                    message: `${profile?.performer_name || 'A manager'} logged an entry for ${entryDate}`,
-                    senderId: session?.user?.id,
-                    entryId: null,
-                }).catch(() => {});
-            }
-        }
+        return STANDARD_TARGETS[canonicalTask] || STANDARD_TARGETS[task] || 0;
     };
 
     const handleDeleteEntry = async (id) => {
         if (!['super_admin', 'general_manager', 'manager'].includes(profile?.role)) {
-            setToastMessage('❌ Access Denied: Only managers can delete entries');
-            setShowToast(true);
+            showAppToast('❌ Access Denied: Only managers can delete entries');
             return;
         }
         if (!window.confirm('Delete this entry?')) return;
@@ -848,8 +572,7 @@ const App = () => {
             const { error } = await supabase.from('status_entries').delete().eq('id', id);
             if (error) throw error;
             setStatusEntries(prev => prev.filter(e => e.id !== id));
-            setToastMessage('🗑️ Entry deleted');
-            setShowToast(true);
+            showAppToast('🗑️ Entry deleted');
             if (notificationsEnabled && existing?.user_id && existing.user_id !== session?.user?.id) {
                 notifyDailyTrackerEvent({
                     type: 'entry_deleted',
@@ -861,25 +584,20 @@ const App = () => {
                 }).catch(() => {});
             }
         } catch (err) {
-            setToastMessage('❌ Error: ' + err.message);
-            setShowToast(true);
+            showAppToast('❌ Error: ' + err.message);
         }
     };
 
-    const handleAdminEmailInvite = async (e) => {
-        e.preventDefault();
+    const handleAdminEmailInvite = async ({ email, role }) => {
         if (profile?.role !== 'super_admin' && profile?.role !== 'general_manager') {
-            setToastMessage('❌ Access Denied: Only super_admin and general_manager can send invites');
-            setShowToast(true);
-            return;
+            showAppToast('❌ Access Denied: Only super_admin and general_manager can send invites');
+            return false;
         }
-        if (!isValidEmail(inviteEmail)) {
-            setToastMessage('❌ Enter a valid email address');
-            setShowToast(true);
-            return;
+        if (!isValidEmail(email)) {
+            showAppToast('❌ Enter a valid email address');
+            return false;
         }
 
-        setInviteSending(true);
         try {
             const { data: { session: adminSession } } = await supabase.auth.getSession();
             if (!adminSession?.access_token) throw new Error('Not signed in');
@@ -894,9 +612,9 @@ const App = () => {
                 },
                 body: JSON.stringify({
                     action: 'invite',
-                    email: inviteEmail.trim().toLowerCase(),
-                    role: inviteRole,
-                    displayName: deriveDisplayNameFromEmail(inviteEmail),
+                    email: email.trim().toLowerCase(),
+                    role,
+                    displayName: deriveDisplayNameFromEmail(email),
                 }),
             });
             const payload = await res.json().catch(() => ({}));
@@ -904,17 +622,12 @@ const App = () => {
                 throw new Error(payload.error || `Invite failed (${res.status})`);
             }
 
-            setToastMessage(`✅ Invite sent to ${inviteEmail}`);
-            setShowToast(true);
-            setShowAdminEmailInviteModal(false);
-            setInviteEmail('');
-            setInviteRole('performer');
+            showAppToast(`✅ Invite sent to ${email}`);
             fetchAllProfiles();
+            return true;
         } catch (err) {
-            setToastMessage('❌ ' + (err.message || 'Invite failed'));
-            setShowToast(true);
-        } finally {
-            setInviteSending(false);
+            showAppToast('❌ ' + (err.message || 'Invite failed'));
+            return false;
         }
     };
 
@@ -968,857 +681,126 @@ const App = () => {
         );
     }
 
+    let tabContent = (
+        <DailyTaskForm
+            session={session}
+            profile={profile}
+            statusEntries={statusEntries}
+            accessibleProfiles={accessibleProfiles}
+            divisionTargets={divisionTargets}
+            clients={clients}
+            isSyncing={isSyncing}
+            setIsSyncing={setIsSyncing}
+            onRefresh={fetchFromSupabase}
+            onToast={showAppToast}
+            summarySlot={
+                <DailySummary
+                    entries={statusEntries}
+                    profile={profile}
+                    accessibleProfiles={accessibleProfiles}
+                    onDeleteEntry={handleDeleteEntry}
+                    onRefresh={fetchFromSupabase}
+                    isSyncing={isSyncing}
+                    canDeleteEntry={canDeleteEntry}
+                    divisionTargets={divisionTargets}
+                    getTargetForEntry={getTargetForEntry}
+                />
+            }
+        />
+    );
+
+    if (activeTab === 'dashboard') {
+        tabContent = (
+            <Dashboard
+                entries={statusEntries}
+                userProfile={profile}
+                clients={clients}
+                divisionTargets={divisionTargets}
+                onRefreshTargets={fetchDivisionTargets}
+                supabase={supabase}
+                accessibleProfiles={accessibleProfiles}
+                analyticsDeepLink={analyticsDeepLink}
+                onDeepLinkConsumed={() => setAnalyticsDeepLink(null)}
+            />
+        );
+    } else if (activeTab === 'projects') {
+        tabContent = (
+            <ProjectDatabaseManager
+                supabase={supabase}
+                session={session}
+                profile={profile}
+                allProfiles={allProfiles}
+                clients={clients}
+            />
+        );
+    } else if (activeTab === 'request_hub' && requestHubEnabled) {
+        tabContent = (
+            <SmartRequestHub
+                profile={profile}
+                initialTicketId={requestHubTicketId}
+                onToast={showAppToast}
+            />
+        );
+    } else if (activeTab === 'super_admin') {
+        tabContent = (
+            <AdminUsersPanel
+                profile={profile}
+                session={session}
+                allProfiles={allProfiles}
+                clients={clients}
+                isAdminSyncing={isAdminSyncing}
+                onRefreshProfiles={fetchAllProfiles}
+                onUpdateUserRole={handleUpdateUserRole}
+                onDeleteUser={handleDeleteUser}
+                onAddUser={handleAddNewUser}
+                onAdminEmailInvite={handleAdminEmailInvite}
+                onManagePassword={openAdminPasswordModal}
+                onToast={showAppToast}
+            />
+        );
+    }
+
     return (
-        <NotificationProvider enabled={notificationsEnabled}>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 p-4 transition-colors duration-300 font-sans">
-                <Toast show={showToast} message={toastMessage} onDone={() => setShowToast(false)} />
-                <NotificationDrawer />
-                <NotificationCenter />
-
-                <nav className="container mx-auto max-w-7xl mb-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                            <ShieldCheck size={24} />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">CBPET Tracker</h1>
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700">{profile?.role || 'Performer'}</span>
-                                {profile?.client_id && <span>• {profile.client_id}</span>}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-bold font-mono">
-                            <User size={14} className="text-gray-400" />
-                            <span>{session.user.email}</span>
-                        </div>
-                        <NotificationBell />
-                        <button 
-                            onClick={() => setShowChangePasswordModal(true)} 
-                            className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 transition-colors"
-                            title="Change Your Password"
-                            aria-label="Change your password"
-                        >
-                            <Lock size={18} />
-                        </button>
-                        {(profile?.role === 'super_admin' || profile?.role === 'general_manager') && (
-                            <button 
-                                onClick={() => setShowAdminResetPasswordModal(true)} 
-                                className="p-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
-                                title="Reset User Password"
-                                aria-label="Reset user password"
-                            >
-                                <KeyRound size={18} />
-                            </button>
-                        )}
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
-                            {darkMode ? '☀️' : '🌙'}
-                        </button>
-                        <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl font-bold transition-all text-sm uppercase tracking-widest">
-                            <LogOut size={18} />
-                            Logout
-                        </button>
-                    </div>
-                </nav>
-
-                <div className="container mx-auto max-w-7xl mb-8 flex justify-center">
-                    <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 flex gap-2 overflow-x-auto">
-                        <button onClick={() => setActiveTab('form')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'form' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                            <ClipboardList size={18} />Daily Task Form
-                        </button>
-                        <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                            <LayoutDashboard size={18} />Analytics
-                        </button>
-                        <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                            <Database size={18} />iTitle
-                        </button>
-                        {requestHubEnabled && (
-                            <button onClick={() => setActiveTab('request_hub')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'request_hub' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                                <Inbox size={18} />Smart Request Hub
-                            </button>
-                        )}
-                        {['super_admin', 'general_manager', 'manager'].includes(profile?.role) && (
-                            <button onClick={() => { setActiveTab('super_admin'); setAdminSubTab('users'); }} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${activeTab === 'super_admin' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                                <Users size={18} />Administration
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                <div className="container mx-auto max-w-7xl bg-white dark:bg-gray-900 rounded-3xl p-6 md:p-10 shadow-xl border border-gray-100 dark:border-gray-800 min-h-[600px]">
-                    {activeTab === 'dashboard' ? (
-                        <Dashboard 
-                            entries={statusEntries} 
-                            userProfile={profile} 
-                            clients={clients} 
-                            divisionTargets={divisionTargets} 
-                            onRefreshTargets={fetchDivisionTargets} 
-                            supabase={supabase}
-                            accessibleProfiles={accessibleProfiles}
-                            analyticsDeepLink={analyticsDeepLink}
-                            onDeepLinkConsumed={() => setAnalyticsDeepLink(null)}
-                        />
-                    ) : activeTab === 'projects' ? (
-                        <ProjectDatabaseManager
-                            supabase={supabase}
-                            session={session}
-                            profile={profile}
-                            allProfiles={allProfiles}
-                            clients={clients}
-                        />
-                    ) : activeTab === 'request_hub' && requestHubEnabled ? (
-                        <SmartRequestHub
-                            profile={profile}
-                            initialTicketId={requestHubTicketId}
-                            onToast={(msg) => { setToastMessage(msg); setShowToast(true); }}
-                        />
-                    ) : activeTab === 'super_admin' ? (
-                        <div className="space-y-8">
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-black flex items-center gap-3">
-                                    <Users className="text-purple-600" />
-                                    System Administration
-                                </h2>
-                                <div className="flex gap-2">
-                                    {adminSubTab === 'users' && (
-                                        <>
-                                            {(profile?.role === 'super_admin' || profile?.role === 'general_manager') && (
-                                                <button
-                                                    onClick={() => setShowAdminEmailInviteModal(true)}
-                                                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-blue-500/20 transition-all text-xs uppercase tracking-widest active:scale-95"
-                                                    title="Email invite with role — user sets name & password"
-                                                >
-                                                    <Mail size={16} /> Admin Invite
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => setShowAddUserModal(true)}
-                                                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white font-black rounded-xl shadow-lg shadow-green-500/20 transition-all text-xs uppercase tracking-widest active:scale-95"
-                                                title="Create account immediately with temp password"
-                                            >
-                                                <UserPlus size={16} /> Add New User
-                                            </button>
-                                            <button
-                                                onClick={() => setShowInviteModal(true)}
-                                                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white font-black rounded-xl shadow-lg shadow-purple-500/20 transition-all text-xs uppercase tracking-widest active:scale-95"
-                                                title="Copy public #signup link"
-                                            >
-                                                <UserPlus size={16} /> Provision User
-                                            </button>
-                                        </>
-                                    )}
-                                    <button
-                                        onClick={adminSubTab === 'users' ? fetchAllProfiles : null}
-                                        disabled={adminSubTab === 'users' ? isAdminSyncing : false}
-                                        className={`p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-lg ${adminSubTab === 'users' && isAdminSyncing ? 'animate-spin' : ''}`}
-                                        aria-label="Refresh user list"
-                                    >
-                                        <RefreshCw size={20} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Admin SubTabs */}
-                            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
-                                <button
-                                    onClick={() => setAdminSubTab('users')}
-                                    className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${adminSubTab === 'users'
-                                        ? 'border-purple-600 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
-                                >
-                                    👥 User Management
-                                </button>
-                                <button
-                                    onClick={() => setAdminSubTab('clients')}
-                                    className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${adminSubTab === 'clients'
-                                        ? 'border-purple-600 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
-                                >
-                                    🏢 Client Management
-                                </button>
-                                <button
-                                    onClick={() => setAdminSubTab('workflows')}
-                                    className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${adminSubTab === 'workflows'
-                                        ? 'border-purple-600 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
-                                >
-                                    📋 Workflow Management
-                                </button>
-                                <button
-                                    onClick={() => setAdminSubTab('projects')}
-                                    className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${adminSubTab === 'projects'
-                                        ? 'border-purple-600 text-purple-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
-                                >
-                                    iTitle Database
-                                </button>
-                            </div>
-
-                            {/* USER MANAGEMENT SECTION */}
-                            {adminSubTab === 'users' && ['super_admin', 'general_manager', 'manager'].includes(profile?.role) ? (
-                                <UserManagement currentUserRole={profile?.role} onResendInvite={async (email, role, onboarding) => {
-                                    const { data: { session: adminSession } } = await supabase.auth.getSession();
-                                    if (!adminSession?.access_token) throw new Error('Not signed in');
-                                    const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`;
-                                    const res = await fetch(fnUrl, {
-                                        method: 'POST',
-                                        headers: {
-                                            Authorization: `Bearer ${adminSession.access_token}`,
-                                            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify({
-                                            action: 'resend',
-                                            email,
-                                            role: role || 'performer',
-                                            displayName: deriveDisplayNameFromEmail(email),
-                                            onboarding: onboarding || undefined,
-                                        }),
-                                    });
-                                    const payload = await res.json().catch(() => ({}));
-                                    if (!res.ok || !payload.ok) throw new Error(payload.error || 'Resend failed');
-                                    return payload;
-                                }} />
-                            ) : adminSubTab === 'users' ? (
-                                <>
-                                    {/* Search Bar */}
-                                    <div className="relative">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search users by name, role or ID..."
-                                            value={userSearchTerm}
-                                            onChange={(e) => setUserSearchTerm(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-purple-500 rounded-2xl outline-none transition-all text-sm font-bold"
-                                        />
-                                    </div>
-
-                                    <div className="overflow-x-auto rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="bg-gray-50 dark:bg-gray-800/50">
-                                                <tr>
-                                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">User Name</th>
-                                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Assignment</th>
-                                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Role</th>
-                                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y dark:divide-gray-800">
-                                                {allProfiles.filter(p =>
-                                                    p.performer_name?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-                                                    p.role?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-                                                    p.id?.toLowerCase().includes(userSearchTerm.toLowerCase())
-                                                ).map(p => (
-                                                    <AdminUserRow
-                                                        key={p.id}
-                                                        user={p}
-                                                        onUpdate={handleUpdateUserRole}
-                                                        onDelete={handleDeleteUser}
-                                                        isSelf={p.id === session.user.id}
-                                                        currentUserRole={profile?.role}
-                                                    />
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            ) : adminSubTab === 'workflows' ? (
-                                <WorkflowManager
-                                    supabase={supabase}
-                                    session={session}
-                                    allProfiles={allProfiles}
-                                    onRefresh={fetchAllProfiles}
-                                />
-                            ) : adminSubTab === 'clients' ? (
-                                <ClientManagement
-                                    supabase={supabase}
-                                    session={session}
-                                    profile={profile}
-                                    allProfiles={allProfiles}
-                                    onRefresh={fetchAllProfiles}
-                                />
-                            ) : adminSubTab === 'projects' ? (
-                                <ProjectDatabaseManager
-                                    supabase={supabase}
-                                    session={session}
-                                    profile={profile}
-                                    allProfiles={allProfiles}
-                                    clients={clients}
-                                />
-                            ) : null}
-
-                            {/* MODALS - Outside main conditional so always available */}
-                            {/* Admin Invite Modal */}
-                            {showAdminEmailInviteModal && adminSubTab === 'users' && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                    <div className="bg-white dark:bg-gray-900 rounded-[40px] p-10 max-w-lg w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-
-                                        <h3 className="text-2xl font-black mb-2 tracking-tight">Admin Invite</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">
-                                            Send an invite email. The user opens the link, confirms display name, and sets a password.
-                                        </p>
-
-                                        <form onSubmit={handleAdminEmailInvite} className="space-y-6">
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Email Address</label>
-                                                <input
-                                                    type="email"
-                                                    value={inviteEmail}
-                                                    onChange={(e) => setInviteEmail(e.target.value)}
-                                                    placeholder="user@company.com"
-                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl outline-none focus:border-blue-500 font-bold text-sm"
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Display Name Preview</label>
-                                                <input
-                                                    type="text"
-                                                    value={deriveDisplayNameFromEmail(inviteEmail) || '—'}
-                                                    readOnly
-                                                    className="w-full p-3 bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl font-bold text-sm text-gray-600 dark:text-gray-300 cursor-not-allowed"
-                                                />
-                                                <p className="text-[10px] text-gray-400 mt-1">Derived from email; user can edit when they accept.</p>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assign Role</label>
-                                                <select
-                                                    value={inviteRole}
-                                                    onChange={(e) => setInviteRole(e.target.value)}
-                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl outline-none focus:border-blue-500 font-bold text-sm"
-                                                >
-                                                    <option value="performer">Performer</option>
-                                                    <option value="team_lead">Team Lead</option>
-                                                    <option value="group_lead">Group Lead</option>
-                                                    <option value="manager">Manager</option>
-                                                    <option value="general_manager">General Manager</option>
-                                                    <option value="super_admin">Super Admin</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="flex gap-3">
-                                                <button
-                                                    type="submit"
-                                                    disabled={inviteSending}
-                                                    className="flex-1 py-3 bg-blue-600 text-white font-black rounded-xl uppercase tracking-widest text-xs shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
-                                                >
-                                                    {inviteSending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                                                    Send Invite
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAdminEmailInviteModal(false)}
-                                                    className="flex-1 py-3 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-black rounded-xl uppercase tracking-widest text-xs"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Add New User Modal */}
-                            {showAddUserModal && adminSubTab === 'users' && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                    <div className="bg-white dark:bg-gray-900 rounded-[40px] p-10 max-w-lg w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-
-                                        <h3 className="text-2xl font-black mb-2 tracking-tight">Add New User</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">Create a new team member with assigned role and permissions.</p>
-
-                                        <form onSubmit={handleAddNewUser} className="space-y-6">
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Email Address</label>
-                                                <input
-                                                    type="email"
-                                                    value={newUserEmail}
-                                                    onChange={(e) => setNewUserEmail(e.target.value)}
-                                                    placeholder="user@example.com"
-                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl outline-none focus:border-green-500 font-bold text-sm"
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Full Name</label>
-                                                <input
-                                                    type="text"
-                                                    value={newUserName}
-                                                    onChange={(e) => setNewUserName(e.target.value)}
-                                                    placeholder="John Doe"
-                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl outline-none focus:border-green-500 font-bold text-sm"
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assign Role</label>
-                                                <select
-                                                    value={newUserRole}
-                                                    onChange={(e) => setNewUserRole(e.target.value)}
-                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl outline-none focus:border-green-500 font-bold text-sm appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat pr-10"
-                                                >
-                                                    <option value="performer">👤 Performer</option>
-                                                    <option value="team_lead">👨‍💼 Team Lead</option>
-                                                    <option value="group_lead">👥 Group Lead</option>
-                                                    <option value="manager">📊 Manager</option>
-                                                    <option value="general_manager">🏢 General Manager</option>
-                                                    <option value="super_admin">🔐 Super Admin</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="p-4 rounded-2xl bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-900">
-                                                <p className="text-xs font-semibold text-green-800 dark:text-green-300">✅ User will be created with the selected role and full access permissions.</p>
-                                            </div>
-
-                                            <div className="flex gap-3">
-                                                <button
-                                                    type="submit"
-                                                    className="flex-1 py-3 bg-green-600 text-white font-black rounded-xl uppercase tracking-widest text-xs shadow-lg shadow-green-500/30 hover:bg-green-700 transition-all active:scale-95"
-                                                >
-                                                    Create User
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowAddUserModal(false)}
-                                                    className="flex-1 py-3 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-black rounded-xl uppercase tracking-widest text-xs hover:bg-gray-300 dark:hover:bg-gray-700 transition-all"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Provision User Modal */}
-                            {showInviteModal && adminSubTab === 'users' && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                    <div className="bg-white dark:bg-gray-900 rounded-[40px] p-10 max-w-lg w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-
-                                        <h3 className="text-2xl font-black mb-2 tracking-tight">Provision New User</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">Generate a registration link for new team members. They will join as 'Performer' by default.</p>
-
-                                        <div className="space-y-6">
-                                            <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Professional Invite Link</p>
-                                                <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-                                                    <code className="flex-1 text-[10px] font-bold text-gray-500 truncate">{window.location.href.split('#')[0]}#signup</code>
-                                                    <button
-                                                        onClick={() => {
-                                                            const url = `${window.location.href.split('#')[0]}#signup`;
-                                                            navigator.clipboard.writeText(url);
-                                                            setToastMessage('📋 Signup link copied!');
-                                                            setShowToast(true);
-                                                        }}
-                                                        className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                                                        aria-label="Copy signup link"
-                                                    >
-                                                        <Copy size={16} />
-                                                    </button>
-                                                </div>
-                                                <button
-                                                    onClick={() => {
-                                                        const msg = `Hi! You've been invited to join the CBPET Daily Tracker. Please register here: ${window.location.href.split('#')[0]}#signup`;
-                                                        navigator.clipboard.writeText(msg);
-                                                        setToastMessage('📩 Invite message copied!');
-                                                        setShowToast(true);
-                                                    }}
-                                                    className="w-full mt-4 py-2 border-2 border-dashed border-purple-200 dark:border-purple-900/50 text-[10px] font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
-                                                >
-                                                    Copy Invite Message
-                                                </button>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900">
-                                                    <div className="p-2 bg-blue-600 rounded-lg text-white font-black text-xs">1</div>
-                                                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">New user signs up via this link.</p>
-                                                </div>
-                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30">
-                                                    <div className="p-2 bg-purple-600 rounded-lg text-white font-black text-xs">2</div>
-                                                    <p className="text-xs font-semibold text-purple-800 dark:text-purple-300">You refresh this tab and assign their Role/Client ID.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => setShowInviteModal(false)}
-                                            className="w-full mt-10 py-4 bg-gray-900 dark:bg-gray-800 text-white font-black rounded-2xl uppercase tracking-widest text-xs transition-all hover:bg-black"
-                                        >
-                                            Close Management
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                    ) : (
-                        <div className="flex flex-col lg:flex-row gap-12">
-                            <div className="flex-1 max-w-xl">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600"><Briefcase size={24} /></div>
-                                    <h2 className="text-2xl font-bold">Add Task</h2>
-                                </div>
-
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Performer</label>
-                                            {canSelectPerformerOnForm ? (
-                                                <select
-                                                    value={performerName}
-                                                    onChange={e => setPerformerName(e.target.value)}
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat"
-                                                >
-                                                    <option value={profile.performer_name}>{profile.performer_name} (You)</option>
-                                                    {accessibleProfiles.filter(p => p.id !== session.user.id).map(p => (
-                                                        <option key={p.id} value={p.performer_name}>{p.performer_name}</option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <input type="text" value={performerName} readOnly className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-not-allowed font-medium" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Date</label>
-                                            <input type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" required />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Client</label>
-                                            {canSelectPerformerOnForm ? (
-                                                <select
-                                                    value={selectedClient}
-                                                    onChange={e => setSelectedClient(e.target.value)}
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat"
-                                                >
-                                                    <option value="DEFAULT_CLIENT">DEFAULT_CLIENT</option>
-                                                    {clients.map(c => (
-                                                        <option key={c.id} value={c.code}>{c.code}</option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <input type="text" value={selectedClient || 'DEFAULT_CLIENT'} readOnly className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-not-allowed font-medium uppercase" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Sub-division</label>
-                                            {canSelectPerformerOnForm ? (
-                                                <select
-                                                    value={selectedSubDivision}
-                                                    onChange={e => setSelectedSubDivision(e.target.value)}
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat pr-10"
-                                                >
-                                                    <option value="">None</option>
-                                                    <option value="PreEdit">PreEdit</option>
-                                                    <option value="Validation">Validation</option>
-                                                </select>
-                                            ) : (
-                                                <input type="text" value={selectedSubDivision || 'None'} readOnly className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-not-allowed font-medium" />
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {isTitlesTask ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Project/Title Name</label>
-                                                <input type="text" value={titleName} onChange={e => setTitleName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="e.g., Springer Nature Vol 42" required />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Pages</label>
-                                                <input
-                                                    type="number"
-                                                    value={castOffPages}
-                                                    onChange={(e) => setCastOffPages(e.target.value)}
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                    placeholder="Optional"
-                                                    min={0}
-                                                />
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                    Reference only — not used in estimate
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Project/Title Name</label>
-                                            <input type="text" value={titleName} onChange={e => setTitleName(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" placeholder="e.g., Springer Nature Vol 42" required />
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="inline-flex items-center gap-2 cursor-pointer select-none mb-2 ml-1">
-                                            <input
-                                                type="checkbox"
-                                                checked={batchFlow}
-                                                onChange={(e) => {
-                                                    const on = e.target.checked;
-                                                    setBatchFlow(on);
-                                                    if (!on) setBatchNumber('');
-                                                }}
-                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Batch flow</span>
-                                        </label>
-                                        {batchFlow && (
-                                            <>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">
-                                                    Batch Number <span className="text-red-500 normal-case tracking-normal">(required)</span>
-                                                </label>
-                                                <select
-                                                    value={batchNumber}
-                                                    onChange={(e) => setBatchNumber(e.target.value)}
-                                                    required
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none font-medium"
-                                                >
-                                                    <option value="">Select batch</option>
-                                                    {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-                                                        <option key={n} value={n}>Batch {n}</option>
-                                                    ))}
-                                                </select>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className={`grid grid-cols-1 gap-6 ${isTitlesTask ? '' : 'md:grid-cols-2'}`}>
-                                        <div>
-                                            <div className="flex items-center justify-between gap-3 mb-2 ml-1">
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Task Type</label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowTargetInfoModal(true)}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                                                >
-                                                    <Info size={13} /> Target Info
-                                                </button>
-                                            </div>
-                                            <select value={taskType} onChange={e => setTaskType(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1rem_center] bg-no-repeat font-medium" required>
-                                                <option value="">Select Task</option>
-                                                {taskTypeOptions.map(k => <option key={k} value={k}>{k}</option>)}
-                                            </select>
-                                            {taskType && !isMiscellaneous ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                    Target: {activeTargetVal} {activeTargetUnit} · Source: {activeTargetSource}
-                                                    {isTitlesTask ? ' · 1 title per entry' : ''}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                        {!isTitlesTask ? (
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">{completedWorkMeta.label}</label>
-                                                <input
-                                                    type="number"
-                                                    value={completedPages}
-                                                    onChange={e => setCompletedPages(e.target.value)}
-                                                    className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                    placeholder={completedWorkMeta.placeholder}
-                                                    required
-                                                />
-                                            </div>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Estimated Hours</label>
-                                            <input
-                                                type="number"
-                                                value={estimatedTime}
-                                                onChange={e => setEstimatedTime(e.target.value)}
-                                                className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                step="0.1"
-                                                min={isMiscellaneous ? MIN_HOURS : 0.1}
-                                                max={isMiscellaneous ? MAX_HOURS : undefined}
-                                                placeholder={isMiscellaneous ? '1.0 – 4.0' : 'Auto'}
-                                                readOnly={!isMiscellaneous}
-                                                required
-                                            />
-                                            {isMiscellaneous ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">Miscellaneous only: {MIN_HOURS}–{MAX_HOURS} hours</p>
-                                            ) : isTitlesTask && hoursPerUnit > 0 ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                    1 title per entry ≈ {hoursPerUnit.toFixed(2)}h · add another entry for more titles
-                                                </p>
-                                            ) : hoursPerUnit > 0 ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">
-                                                    1 {completedWorkMeta.unitWord} ≈ {hoursPerUnit.toFixed(2)}h
-                                                    {completedPages
-                                                        ? ` · Est = ${completedPages} × ${hoursPerUnit.toFixed(2)}h`
-                                                        : ''}
-                                                </p>
-                                            ) : (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">Auto: Completed Work × 8 ÷ Daily Target</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Taken Hours</label>
-                                            <input
-                                                type="number"
-                                                value={takenTime}
-                                                onChange={e => setTakenTime(e.target.value)}
-                                                className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                                step="0.1"
-                                                min={isMiscellaneous ? MIN_HOURS : 0.1}
-                                                max={isMiscellaneous ? MAX_HOURS : undefined}
-                                                placeholder={isMiscellaneous ? '1.0 – 4.0' : '7.5'}
-                                                required
-                                            />
-                                            {isMiscellaneous ? (
-                                                <p className="text-[10px] text-gray-400 mt-1 ml-1">Miscellaneous only: {MIN_HOURS}–{MAX_HOURS} hours</p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
-                                        <ShieldCheck size={20} />Authorize and Log
-                                    </button>
-                                </form>
-                            </div>
-
-                            <DailySummary
-                                entries={statusEntries}
-                                profile={profile}
-                                accessibleProfiles={accessibleProfiles}
-                                onDeleteEntry={handleDeleteEntry}
-                                onRefresh={fetchFromSupabase}
-                                isSyncing={isSyncing}
-                                canDeleteEntry={canDeleteEntry}
-                                divisionTargets={divisionTargets}
-                                getTargetForEntry={getTargetForEntry}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                <footer className="container mx-auto max-w-7xl mt-8 text-center text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-[0.3em]">
-                    &copy; {new Date().getFullYear()} CBPET Engine Alpha • Real-time Monitoring Active
-                </footer>
-            </div>
-
-            <Modal
-                show={showTargetInfoModal}
-                onClose={() => setShowTargetInfoModal(false)}
-                maxWidth="max-w-5xl"
+        <>
+            <AppShell
+                profile={profile}
+                session={session}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onLogout={handleLogout}
+                onChangePassword={() => setShowChangePasswordModal(true)}
+                onAdminResetPassword={() => openAdminPasswordModal()}
+                requestHubEnabled={requestHubEnabled}
+                notificationsEnabled={notificationsEnabled}
+                showToast={showToast}
+                toastMessage={toastMessage}
+                onToastDone={() => setShowToast(false)}
             >
-                <div className="text-left flex flex-col min-h-0 flex-1 overflow-hidden">
-                    <div className="flex items-start justify-between gap-4 mb-4 shrink-0">
-                        <div className="min-w-0 pr-2">
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white">Daily Targets & Score Formula</h2>
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1">
-                                Estimated Hours are calculated from completed work against the active daily target.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowTargetInfoModal(false)}
-                            className="shrink-0 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-black uppercase tracking-wider text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                            Close
-                        </button>
-                    </div>
+                {tabContent}
+            </AppShell>
 
-                    <div className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
-                        <div className="mb-4 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/30 px-4 py-3">
-                            {taskType ? (
-                                <p className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                                    {isMiscellaneous
-                                        ? 'Current task is Miscellaneous: estimated and taken hours are manual, allowed range 1-4 hours.'
-                                        : `Current task uses ${activeTargetSource.toLowerCase()}: ${activeTargetVal} ${activeTargetUnit}.`}
-                                </p>
-                            ) : (
-                                <p className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                                    Select a task to highlight its target and active source.
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="max-h-[40vh] overflow-auto rounded-xl border border-gray-200 dark:border-gray-700">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                                <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Task Type</th>
-                                        <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-gray-500">Daily Target</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Unit</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Estimated Hours Formula</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">Example</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                                    {TARGET_INFO_ROWS.map((row) => {
-                                        const isActiveRow = normalizeTaskType(taskType) === row.taskType || taskType === row.taskType;
-                                        return (
-                                            <tr
-                                                key={row.taskType}
-                                                className={isActiveRow ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'}
-                                            >
-                                                <td className="px-4 py-3 font-bold text-gray-900 dark:text-white">{row.taskType}</td>
-                                                <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">{row.target ?? 'none'}</td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{row.unit}</td>
-                                                <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{row.formula}</td>
-                                                <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{row.example}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Productive Task Formula</h3>
-                                <div className="space-y-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                    <p><span className="font-mono">Estimated Hours = Completed Work × 8 ÷ Daily Target</span></p>
-                                    <p><span className="font-mono">Time Achieved % = Estimated Hours ÷ Taken Hours × 100</span></p>
-                                    <p><span className="font-mono">Target Achieved % = Completed Work ÷ ((Daily Target ÷ 8) × Taken Hours) × 100</span></p>
-                                    <p><span className="font-mono">Performance Score = 60% Target Achieved + 40% Time Achieved</span></p>
-                                </div>
-                            </div>
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Miscellaneous Rule</h3>
-                                <div className="space-y-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                    <p>Miscellaneous has no productivity target.</p>
-                                    <p>Estimated Hours and Taken Hours are entered manually.</p>
-                                    <p>Allowed range: 1-4 hours.</p>
-                                    <p><span className="font-mono">Misc Score = min((Taken Hours ÷ 8) × 100, 100)</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
-
-            {/* Password Management Modals */}
             {showChangePasswordModal && (
-                <ChangePassword 
+                <ChangePassword
                     profile={profile}
                     onClose={() => setShowChangePasswordModal(false)}
                 />
             )}
 
-            {showAdminResetPasswordModal && (
+            {adminPasswordModal && (
                 <AdminResetUserPassword
+                    key={`${adminPasswordModal.userId || 'any'}-${adminPasswordModal.mode}`}
                     profile={profile}
+                    session={session}
                     allProfiles={allProfiles}
-                    onClose={() => setShowAdminResetPasswordModal(false)}
+                    initialUserId={adminPasswordModal.userId}
+                    initialMode={adminPasswordModal.mode}
+                    onClose={() => setAdminPasswordModal(null)}
                     onPasswordReset={() => fetchAllProfiles()}
                 />
             )}
-        </NotificationProvider>
+        </>
     );
 };
 

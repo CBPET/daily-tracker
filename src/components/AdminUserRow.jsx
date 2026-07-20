@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Mail, KeyRound } from 'lucide-react';
+import { canAdminResetPassword } from '../lib/adminAccess';
 
-const AdminUserRow = ({ user, onUpdate, onDelete, isSelf, currentUserRole }) => {
+const AdminUserRow = ({
+    user,
+    onUpdate,
+    onDelete,
+    isSelf,
+    currentUserRole,
+    onManagePassword,
+}) => {
     const [role, setRole] = useState(user.role);
     const [clientId, setClientId] = useState(user.client_id || '');
     const [changed, setChanged] = useState(false);
 
-    // Debug: Log access levels
     const canEdit = currentUserRole === 'super_admin' || currentUserRole === 'general_manager';
     const canDelete = currentUserRole === 'super_admin' || currentUserRole === 'general_manager';
-
-    if (currentUserRole === 'super_admin' || currentUserRole === 'general_manager') {
-        console.log(`✅ ${currentUserRole.toUpperCase()}: Full CRUD access`, { userId: user.id, userName: user.performer_name });
-    } else {
-        console.log(`⛔ ${currentUserRole}: Read-only access`, { userId: user.id, userName: user.performer_name });
-    }
+    const canResetPassword = canAdminResetPassword(currentUserRole);
 
     const handleSave = () => {
         if (!canEdit) {
@@ -74,7 +76,7 @@ const AdminUserRow = ({ user, onUpdate, onDelete, isSelf, currentUserRole }) => 
                     ))}
                 </select>
             </td>
-            <td className="p-4 flex items-center gap-3">
+            <td className="p-4 flex items-center gap-2 flex-wrap">
                 {changed ? (
                     <button
                         onClick={handleSave}
@@ -86,7 +88,27 @@ const AdminUserRow = ({ user, onUpdate, onDelete, isSelf, currentUserRole }) => 
                 ) : (
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 opacity-40">Sync</span>
                 )}
-                {!isSelf && (currentUserRole === 'super_admin' || currentUserRole === 'general_manager') && (
+                {!isSelf && canResetPassword && onManagePassword && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => onManagePassword({ userId: user.id, mode: 'reset_link' })}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-all"
+                            title="Send password reset link"
+                        >
+                            <Mail size={12} /> Reset link
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onManagePassword({ userId: user.id, mode: 'set_password' })}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg transition-all"
+                            title="Set temporary password"
+                        >
+                            <KeyRound size={12} /> Set password
+                        </button>
+                    </>
+                )}
+                {!isSelf && canDelete && (
                     <button
                         onClick={() => onDelete(user.id)}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
